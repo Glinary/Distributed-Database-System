@@ -1,12 +1,20 @@
 import mysql from 'mysql2'
 
+// database configurations
 const centralDB = {
   host: 'localhost',
   user: 'root',
   password: '12345',
   database: 'stadvdbmco1'
-}
-const db = createConnection(centralDB, 'centralDB')
+};
+const luzonDB = { ...centralDB, database: 'luzonDB'};
+const visMinDB = { ...centralDB, database: 'visMinDB'};
+
+
+const db = createConnection(centralDB, 'centralDB');
+const db_2 = createConnection(luzonDB, 'luzonDB');
+const db_3 = createConnection(visMinDB, 'visMinDB');
+
 
 function createConnection(database, name) {
   let connection = mysql.createConnection(centralDB);
@@ -22,4 +30,25 @@ function createConnection(database, name) {
 
   // close the MySQL connection
   //connection.end();
+
+  return connection
 }
+
+function checkConnection(connection, name) {
+  connection.query('SELECT 1', (err) => {
+    if (err) {
+      console.error(`${name} - check connection failed`);
+    } else {
+      console.log(`${name} - check connection is successful`);
+    }
+  })
+}
+
+async function checkConnections() {
+  checkConnection(db, 'centralDB');
+  checkConnection(db_2, 'luzonDB');
+  checkConnection(db_3, 'visMinDB');
+}
+
+
+checkConnections();
