@@ -4,7 +4,8 @@
   "description": "A web application that uses 3 nodes as a distributed database system.",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "connect": "node connect.js"
   },
   "keywords": [],
   "author": "",
