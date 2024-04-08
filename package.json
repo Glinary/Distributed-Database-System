@@ -1,0 +1,20 @@
+{
+  "name": "distributed-database-system",
+  "version": "1.0.0",
+  "description": "A web application that uses 3 nodes as a distributed database system.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-handlebars": "^7.1.2",
+    "routes": "^2.1.0"
+  }
+}
