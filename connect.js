@@ -1,3 +1,5 @@
+// NOTE: This file is strictly for testing. 
+// Use command 'npm run connect' to see of mySQL commands work.
 import mysql from 'mysql2'
 
 // database configurations
@@ -9,7 +11,6 @@ const centralDB = {
 };
 const luzonDB = { ...centralDB, database: 'luzonDB'};
 const visMinDB = { ...centralDB, database: 'visMinDB'};
-
 
 const db = createConnection(centralDB, 'centralDB');
 const db_2 = createConnection(luzonDB, 'luzonDB');
@@ -44,11 +45,11 @@ function checkConnection(connection, name) {
   })
 }
 
-async function checkConnections() {
+function checkConnections() {
   checkConnection(db, 'centralDB');
   checkConnection(db_2, 'luzonDB');
   checkConnection(db_3, 'visMinDB');
 }
 
-
-checkConnections();
+// use function to check connections to 3 nodes
+// checkConnections();
