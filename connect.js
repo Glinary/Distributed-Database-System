@@ -9,8 +9,8 @@ const centralDB = {
   password: '12345',
   database: 'stadvdbmco1'
 };
-const luzonDB = { ...centralDB, database: 'luzonDB'};
-const visMinDB = { ...centralDB, database: 'visMinDB'};
+const luzonDB = { ...centralDB, database: 'stadvdbmco1'}; //TODO: CHANGE LATER
+const visMinDB = { ...centralDB, database: 'stadvdbmco1'}; //TODO: CHANGE LATER
 
 const db = createConnection(centralDB, 'centralDB');
 const db_2 = createConnection(luzonDB, 'luzonDB');
@@ -18,16 +18,17 @@ const db_3 = createConnection(visMinDB, 'visMinDB');
 
 
 function createConnection(database, name) {
-  let connection = mysql.createConnection(centralDB);
+  let connection = mysql.createConnection(database);
   
   connection.connect((err) => {
     if (err) {
       console.error(`${name} - Error connecting to MySQL server.`)
-      setTimeout(() => createConnection(database), 3000); //reconnect again after timeout
+      setTimeout(() => createConnection(database, name), 3000); //reconnect again after timeout
     } else {
       console.log(`${name} - Connected to MySQL server successfully!`)
     }
   }) 
+
 
   // close the MySQL connection
   //connection.end();
@@ -51,5 +52,20 @@ function checkConnections() {
   checkConnection(db_3, 'visMinDB');
 }
 
+function viewDoctors() {
+  const sqlCentralDB = 'SELECT * FROM doctors LIMIT 10;';
+  db.query(sqlCentralDB, (err, results) => {
+    if (err) {
+      console.error(`Error fetching appointments from CentralDB: ${err}`);
+    } else {
+      console.log('Appointments from CentralDB');
+      console.table(results);
+    }
+  })
+}
+
 // use function to check connections to 3 nodes
 // checkConnections();
+
+// use function to view 10 doctors
+//viewDoctors()

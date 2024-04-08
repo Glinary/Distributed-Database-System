@@ -12,8 +12,8 @@ const centralDB = {
   password: '12345',
   database: 'stadvdbmco1'
 };
-const luzonDB = { ...centralDB, database: 'luzonDB'};
-const visMinDB = { ...centralDB, database: 'visMinDB'};
+const luzonDB = { ...centralDB, database: 'stadvdbmco1'}; //TODO: CHANGE LATER
+const visMinDB = { ...centralDB, database: 'stadvdbmco1'}; //TODO: CHANGE LATER
 
 // create variable connections
 const db = createConnection(centralDB, 'centralDB');
@@ -26,7 +26,7 @@ function createConnection(database, name) {
   connection.connect((err) => {
     if (err) {
       console.error(`${name} - Error connecting to MySQL server.`)
-      setTimeout(() => createConnection(database), 3000); //reconnect again after timeout
+      setTimeout(() => createConnection(database, name), 3000); //reconnect again after timeout
     } else {
       console.log(`${name} - Connected to MySQL server successfully!`)
     }
@@ -54,14 +54,38 @@ function checkConnections() {
   checkConnection(db_3, 'visMinDB');
 }
 
+function viewDoctors() {
+  const sqlCentralDB = 'SELECT * FROM doctors LIMIT 10;';
+  db.query(sqlCentralDB, (err, results) => {
+    if (err) {
+      console.error(`Error fetching appointments from CentralDB: ${err}`);
+    } else {
+      console.log('Appointments from CentralDB');
+      console.table(results);
+    }
+  })
+}
+
 // use function to check connections to 3 nodes
 // checkConnections();
 
+// use function to view 10 doctors
+//viewDoctors()
 
 const controller = {
   getHome: async function (req, res) {
     checkConnections();
     
+    res.render("home", {
+      maincss: "/static/css/main.css",
+      mainscript: "/static/js/home.js",
+    });
+  },
+
+  getDoctors: async function (req, res) {
+    viewDoctors();
+    
+    //TODO: CHANGE LATER
     res.render("home", {
       maincss: "/static/css/main.css",
       mainscript: "/static/js/home.js",
