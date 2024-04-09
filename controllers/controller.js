@@ -1,7 +1,7 @@
 import express from "express";
 import bodyParser from "body-parser";
 import mysql from "mysql2";
-import connect from "../connect.js"
+import connect from "../connect.js";
 
 const app = express();
 app.use(bodyParser.json());
@@ -84,20 +84,64 @@ const controller = {
 
   getAllData: async function (req, res) {
     console.log("---HERE---");
-    try {
-      const sqlCentralDB = "SELECT * FROM appt_main LIMIT 10;";
-      db.query(sqlCentralDB, (err, results) => {
-        if (err) {
-          console.error(`Error fetching appointments from CentralDB: ${err}`);
-        } else {
-          console.log("Appointments from CentralDB");
-          console.table(results);
-          res.status(200).json({ rows: results });
+
+    async function connectionReRoute() {
+      let connection;
+      try {
+        connection = connect.central_node.getConnection();
+        node = connect.central_node;
+      } catch (err) {
+        try {
+          connection = connect.luzon_node.getConnection();
+          node = connect.luzon_node;
+        } catch (err) {
+          try {
+            connection = connect.vismin_node.getConnection();
+            node = connect.vismin_node;
+          } catch (err) {
+            console.log(err);
+            res.status(500).send("Error retrieving data from database");
+          }
         }
-      });
-    } catch (error) {
-      console.error("Error querying database:", error);
-      res.status(500).send("Internal Server Error");
+      }
+    }
+    console.log("Getting data...");
+    let node;
+
+    await connectionReRoute();
+    const [result] = await connect.dbQuery(
+      node,
+      "SELECT * FROM appt_main LIMIT 15",
+      []
+    );
+
+    if (node === connect.central_node) {
+      //sample of how to read output
+      console.table(result);
+      res.status(200).json({ rows: result });
+    } else {
+      const [result2] = await connect.dbQuery(
+        node === connect.luzon_node ? connect.vismin_node : connect.luzon_node,
+        "SELECT * FROM appt_main LIMIT 15",
+        []
+      );
+
+      console.table(result);
+      res.status(200).json({ rows: result });
+
+      // const combinedData = appointments.concat(appointments2);
+      // const uniqueData = [
+      //   ...new Map(combinedData.map((item) => [item.id, item])).values(),
+      // ];
+      // uniqueData.sort((a, b) => a.id - b.id);
+      // //sample of how to read output
+      // appointments2.forEach((appointment2) => {
+      //   console.log(appointment2.status);
+      // });
+      // res.render("home", {
+      //   maincss: "/static/css/main.css",
+      //   mainscript: "/static/js/home.js",
+      // });
     }
   },
 
@@ -112,33 +156,32 @@ const controller = {
   },
 
   getAppointments: async function (req, res) {
-    
     async function connectionReRoute() {
       let connection;
       try {
         connection = connect.central_node.getConnection();
         node = connect.central_node;
       } catch (err) {
+        try {
+          connection = connect.luzon_node.getConnection();
+          node = connect.luzon_node;
+        } catch (err) {
           try {
-              connection = connect.luzon_node.getConnection();
-              node = connect.luzon_node;
+            connection = connect.vismin_node.getConnection();
+            node = connect.vismin_node;
           } catch (err) {
-              try {
-                  connection = connect.vismin_node.getConnection();
-                  node = connect.vismin_node;
-              } catch (err) {
-                  console.log(err);
-                  res.status(500).send('Error retrieving data from database');
-              }
+            console.log(err);
+            res.status(500).send("Error retrieving data from database");
           }
+        }
       }
     }
     console.log("Getting data...");
     let node;
-        
+
     await connectionReRoute();
     const [result] = await connect.dbQuery(node, "SELECT * FROM appt_main", []);
-    const appointments = result.map(row => ({
+    const appointments = result.map((row) => ({
       pxid: row.pxid,
       clinicid: row.clinicid,
       doctorid: row.doctorid,
@@ -148,22 +191,26 @@ const controller = {
       QueueDate: row.QueueDate,
       StartTime: row.StartTime,
       EndTime: row.EndTime,
-      Virtual: row.Virtual
+      Virtual: row.Virtual,
     }));
 
     if (node === connect.central_node) {
       //sample of how to read output
-      appointments.forEach(appointment => {
+      appointments.forEach((appointment) => {
         console.log(appointment.pxid);
       });
-      
+
       res.render("home", {
-      maincss: "/static/css/main.css",
-      mainscript: "/static/js/home.js",
+        maincss: "/static/css/main.css",
+        mainscript: "/static/js/home.js",
       });
     } else {
-      const [result2] = await connect.dbQuery(node === connect.luzon_node ? connect.vismin_node : connect.luzon_node, "SELECT * FROM appt_main", []);
-      const appointments2 = result2.map(row => ({
+      const [result2] = await connect.dbQuery(
+        node === connect.luzon_node ? connect.vismin_node : connect.luzon_node,
+        "SELECT * FROM appt_main",
+        []
+      );
+      const appointments2 = result2.map((row) => ({
         pxid: row.pxid,
         clinicid: row.clinicid,
         doctorid: row.doctorid,
@@ -173,13 +220,15 @@ const controller = {
         QueueDate: row.QueueDate,
         StartTime: row.StartTime,
         EndTime: row.EndTime,
-        Virtual: row.Virtual
+        Virtual: row.Virtual,
       }));
       const combinedData = appointments.concat(appointments2);
-      const uniqueData = [...new Map(combinedData.map(item => [item.id, item])).values()];
+      const uniqueData = [
+        ...new Map(combinedData.map((item) => [item.id, item])).values(),
+      ];
       uniqueData.sort((a, b) => a.id - b.id);
       //sample of how to read output
-      appointments2.forEach(appointment2 => {
+      appointments2.forEach((appointment2) => {
         console.log(appointment2.status);
       });
       res.render("home", {
@@ -187,12 +236,10 @@ const controller = {
         mainscript: "/static/js/home.js",
       });
     }
-       
-  }
+  },
 };
 
 export default controller;
-
 
 ///////////////// DRAFT //////////////////////////
 
@@ -221,7 +268,7 @@ export default controller;
 //       mainscript: "/static/js/home.js",
 //     });
 //   },
-  
+
 // };
 
 // export default controller;
