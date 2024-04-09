@@ -148,9 +148,11 @@ async function dbQuery(pool, query, content, callback) {
       // Feature: Rollback when there is an error
       if (connection) await connection.rollback();
 
+
       let query_type = query.split(" ")[0];
       if (process.env.NODE_NUM_CONFIGURATION != 1 && query_type != "SELECT")
           await storeQuery(pool, query, content);
+
 
       callback(err);
 

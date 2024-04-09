@@ -28,19 +28,55 @@ async function onload() {
 }
 
 function checkPage() {
+  console.log("category: ", category);
   const patientAdd = document.getElementById("patient-add");
-  const doctorAdd = document.getElementById("doctor-add");
+  const appAdd = document.getElementById("appt-add");
   const operation = document.querySelector(".operation");
 
   if (currOperation == "Add") {
     if (category == "patients") {
       patientAdd.style.display = "block";
       operation.style.display = "flex";
-    } else if (category == "doctors") {
-      doctorAdd.style.display = "block";
+    } else if (category == undefined) {
+      console.log("UNDEFINED");
+      appAdd.style.display = "block";
       operation.style.display = "flex";
+      document.getElementById("opSelect").value = "Queued";
+      setDefaultTime("StartTime");
+      setDefaultTime("TimeQueued");
+      setDefaultTime("EndTime");
+      setDefaultDate("QueueDate");
     }
   }
+}
+
+function setDefaultTime(timeVar) {
+  // Create a new Date object to get the current time
+  var now = new Date();
+
+  // Get the current hour and minute in two-digit format (e.g., "08:30")
+  var hours = now.getHours().toString().padStart(2, "0"); // Ensure two digits
+  var minutes = now.getMinutes().toString().padStart(2, "0"); // Ensure two digits
+
+  // Set the value of the time input field to the current time
+  var currentTime = hours + ":" + minutes;
+  document.getElementById(timeVar).value = currentTime;
+}
+
+function setDefaultDate(dateVar) {
+  // Create a new Date object for today's date
+  var today = new Date();
+
+  // Format the date as YYYY-MM-DD
+  var year = today.getFullYear();
+  var month = (today.getMonth() + 1).toString().padStart(2, "0"); // Months are zero-based
+  var day = today.getDate().toString().padStart(2, "0"); // Day of the month
+
+  // Create the formatted date string (YYYY-MM-DD)
+  var formattedDate = `${year}-${month}-${day}`;
+
+  // Set the value of the date input field
+  document.getElementById(dateVar).value = formattedDate;
 }
 
 async function checkCount() {
@@ -86,7 +122,7 @@ async function fetchData() {
 async function addSubmit(event) {
   event.preventDefault();
 
-  const addForm = document.forms.addForm;
+  const addForm = document.forms.addFormMain;
   const formData = new FormData(addForm);
 
   const data = {};
@@ -98,6 +134,8 @@ async function addSubmit(event) {
   const json = JSON.stringify(data);
 
   body = { category: category, json };
+
+  console.log(json);
 
   const response = await fetch(`/addtodb`, {
     method: "POST",
