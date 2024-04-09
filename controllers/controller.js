@@ -73,9 +73,22 @@ function viewDoctors() {
 // use function to view 10 doctors
 // viewDoctors()
 
+function formattedDatetime(variable) {
+  var [hours, minutes] = variable.split(":");
+
+  // Create a new Date object with today's date and the specified time
+  var today = new Date();
+  today.setHours(hours);
+  today.setMinutes(minutes);
+  today.setSeconds(0); // Set seconds to zero if you don't need them
+
+  // Format the datetime string for MySQL (YYYY-MM-DD HH:MM:SS)
+  var formattedDatetime = today.toISOString().slice(0, 19).replace("T", " ");
+  return formattedDatetime;
+}
+
 const controller = {
   getHome: async function (req, res) {
-    checkConnections();
     res.render("home", {
       maincss: "/static/css/main.css",
       mainscript: "/static/js/home.js",
@@ -96,14 +109,15 @@ const controller = {
       allpatients: `SELECT * FROM px LIMIT 15 OFFSET ${(pageNum - 1) * 15};`,
       alldata: `SELECT pxid, clinicid, doctorid, apptid, status,
                       DATE_FORMAT(TimeQueued, "%l:%i %p") AS "Time Queued",
-                      DATE_FORMAT(TimeQueued, "%M %d, %Y") AS "Date Queued",
+                      DATE_FORMAT(QueueDate, "%M %d, %Y") AS "Date Queued",
                       DATE_FORMAT(StartTime, "%l:%i %p") AS "Start Time",
                       DATE_FORMAT(EndTime, "%l:%i %p") AS "End Time",
                       type AS "Type", appt_main.virtual AS "Virtual"
                FROM appt_main LIMIT 15 OFFSET ${(pageNum - 1) * 15};`,
+      // alldata: `SELECT pxid, clinicid, doctorid, apptid, status, TimeQueued, QueueDate, StartTime, EndTime, type AS "Type", appt_main.virtual as "Virtual" FROM appt_main LIMIT 15 OFFSET ${
+      //   (pageNum - 1) * 15
+      // };`,
     };
-
-    console.log(categories[category]);
 
     async function connectionReRoute() {
       let connection;
@@ -132,25 +146,20 @@ const controller = {
     const sql = categories[category];
 
     await connectionReRoute();
-    const [result] = await connect.dbQuery(
-      node,
-      `SELECT * FROM appt_main LIMIT 15`,
-      []
-    );
+    const [result] = await connect.dbQuery(node, sql, []);
 
     if (node === connect.central_node) {
-      //sample of how to read output
       console.table(result);
       res.status(200).json({ rows: result });
     } else {
       const [result2] = await connect.dbQuery(
         node === connect.luzon_node ? connect.vismin_node : connect.luzon_node,
-        "SELECT * FROM appt_main LIMIT 15",
+        sql,
         []
       );
 
-      console.table(result);
-      res.status(200).json({ rows: result });
+      console.table(result2);
+      res.status(200).json({ rows: result2 });
 
       // const combinedData = appointments.concat(appointments2);
       // const uniqueData = [
@@ -170,6 +179,8 @@ const controller = {
 
   getAddToDB: async function (req, res) {
     const category = req.body.category;
+    console.log("Category: ", category);
+    let location = "luzon";
 
     if (category == "patients") {
       var data = req.body.json;
@@ -177,27 +188,49 @@ const controller = {
 
       var table = "px";
       var primaryKey = "pxid";
-      var columns = "(pxid, age, gender)";
-      var valuesCount = "VALUES (?,?,?)";
+    } else if (category == undefined) {
+      var data = req.body.json;
+
+      var table = "appt_main";
+      var primaryKey = "apptid";
+
+      var {
+        pxid,
+        clinicid,
+        doctorid,
+        status,
+        TimeQueued,
+        QueueDate,
+        StartTime,
+        EndTime,
+        type,
+        virtual,
+      } = JSON.parse(data);
+
+      console.log("This: ", TimeQueued);
+
+      TimeQueued = formattedDatetime(TimeQueued);
+      StartTime = formattedDatetime(StartTime);
+      EndTime = formattedDatetime(EndTime);
     }
 
-    // SQL query to insert data into the 'px' table
-    var sql = `INSERT INTO ${table} ${columns} ${valuesCount}`;
+    console.log("virtual: ", virtual);
 
     // SQL query to retrieve the last inserted ID from the 'px' table
-    var sqlLastId = `SELECT ${primaryKey} FROM ${table} ORDER BY ${primaryKey} DESC LIMIT 1`;
+    var sqlLastId = `SELECT ${primaryKey} as keyid FROM ${table} ORDER BY ${primaryKey} DESC LIMIT 1`;
 
     // Retrieve the last inserted ID from the 'px' table
-    db.query(sqlLastId, (err, result) => {
+    db.query(sqlLastId, async (err, result) => {
       if (err) {
         console.error("Error retrieving last ID from database:", err);
         res.status(500).send("Internal Server Error");
       } else {
         let nextID;
+        console.log("Returned id: ", result);
 
         if (result.length > 0) {
           // Extract the last inserted ID from the result
-          const lastID = result[0].pxid;
+          const lastID = result[0].keyid;
 
           // Convert the lastID from hexadecimal to a BigInt value
           const intValue = BigInt(`0x${lastID}`);
@@ -216,18 +249,41 @@ const controller = {
         nextID = nextID.toUpperCase();
 
         if (category == "patients") {
-          var values = [nextID, age, gender];
+          var appt_set = [nextID, age, gender];
+        } else if (category == undefined) {
+          var apptid = nextID;
+          var appt_set = {
+            pxid,
+            clinicid,
+            doctorid,
+            apptid,
+            status,
+            TimeQueued,
+            QueueDate,
+            StartTime,
+            EndTime,
+            type,
+            virtual,
+          };
         }
 
-        db.query(sql, values, (err, results) => {
-          if (err) {
-            console.error(`Error inserting data into database: ${err}`);
-            res.status(500).send("Internal Server Error");
-          } else {
-            console.log("Data inserted successfully");
-            res.status(200).json({ message: "Data inserted successfully" });
+        let node =
+          location == "luzon" ? connect.luzon_node : connect.vismin_node;
+
+        await connect.dbQuery(
+          node,
+          `INSERT INTO ${table} SET ?`,
+          appt_set,
+          (err, res) => {
+            if (err) {
+              console.log(err);
+              res.status(500).send("Error: appointment was not registered.");
+            } else {
+              console.log("Appointment successfully submitted");
+              res.status(200).send();
+            }
           }
-        });
+        );
       }
     });
   },
@@ -266,7 +322,6 @@ const controller = {
 
   getDataCount: async function (req, res) {
     const category = req.body.category;
-    console.log(category);
 
     const categories = {
       doctors: "doctors",
@@ -298,89 +353,6 @@ const controller = {
       maincss: "/static/css/main.css",
       mainscript: "/static/js/home.js",
     });
-  },
-
-  getAppointments: async function (req, res) {
-    async function connectionReRoute() {
-      let connection;
-      try {
-        connection = connect.central_node.getConnection();
-        node = connect.central_node;
-      } catch (err) {
-        try {
-          connection = connect.luzon_node.getConnection();
-          node = connect.luzon_node;
-        } catch (err) {
-          try {
-            connection = connect.vismin_node.getConnection();
-            node = connect.vismin_node;
-          } catch (err) {
-            console.log(err);
-            res.status(500).send("Error retrieving data from database");
-          }
-        }
-      }
-    }
-    console.log("Getting data...");
-    let node;
-
-    await connectionReRoute();
-    const [result] = await connect.dbQuery(node, "SELECT * FROM appt_main", []);
-    const appointments = result.map((row) => ({
-      pxid: row.pxid,
-      clinicid: row.clinicid,
-      doctorid: row.doctorid,
-      apptid: row.apptid,
-      status: row.status,
-      TimeQueued: row.TimeQueued,
-      QueueDate: row.QueueDate,
-      StartTime: row.StartTime,
-      EndTime: row.EndTime,
-      Virtual: row.Virtual,
-    }));
-
-    if (node === connect.central_node) {
-      //sample of how to read output
-      appointments.forEach((appointment) => {
-        console.log(appointment.pxid);
-      });
-
-      res.render("home", {
-        maincss: "/static/css/main.css",
-        mainscript: "/static/js/home.js",
-      });
-    } else {
-      const [result2] = await connect.dbQuery(
-        node === connect.luzon_node ? connect.vismin_node : connect.luzon_node,
-        "SELECT * FROM appt_main",
-        []
-      );
-      const appointments2 = result2.map((row) => ({
-        pxid: row.pxid,
-        clinicid: row.clinicid,
-        doctorid: row.doctorid,
-        apptid: row.apptid,
-        status: row.status,
-        TimeQueued: row.TimeQueued,
-        QueueDate: row.QueueDate,
-        StartTime: row.StartTime,
-        EndTime: row.EndTime,
-        Virtual: row.Virtual,
-      }));
-      const combinedData = appointments.concat(appointments2);
-      const uniqueData = [
-        ...new Map(combinedData.map((item) => [item.id, item])).values(),
-      ];
-      uniqueData.sort((a, b) => a.id - b.id);
-      //sample of how to read output
-      appointments2.forEach((appointment2) => {
-        console.log(appointment2.status);
-      });
-      res.render("home", {
-        maincss: "/static/css/main.css",
-        mainscript: "/static/js/home.js",
-      });
-    }
   },
 };
 

@@ -33,19 +33,61 @@
             </form>
         </div>
         
-        <div class="add-op" id="doctor-add">
-             <form id="addForm">
+        <div class="add-op" id="appt-add">
+             <form id="addFormMain">
                 <div class="elements">
-                     <div class="opt">
-                        <label for="gender">Gender</label>
-                        <select id="opSelect" name="gender">
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                        </select><br><br>
+                    <div class="opt">
+                        <label for="pxid">pxid</label>
+                        <input type="text" id="pxid" name="pxid" required>
                     </div>
                     <div class="opt">
-                        <label for="Age">Main Specialty</label>
-                        <input type="number" id="age" name="age" min="0" step="1" required>
+                        <label for="clinicid">clinicid</label>
+                        <input type="text" id="clinicid" name="clinicid"required>
+                    </div>
+                    <div class="opt">
+                        <label for="doctorid">doctorid</label>
+                        <input type="text" id="doctorid" name="doctorid"required>
+                    </div>
+                    <div class="opt">
+                        <label for="gender">Status</label>
+                        <select id="opSelect" name="status">
+                            <option value="Complete">Complete</option>
+                            <option value="Queued" selected>Queued</option>
+                            <option value="No Show">NoShow</option>
+                            <option value="Serving">Serving</option>
+                            <option value="Cancel">Cancel</option>
+                            <option value="Admitted">Admitted</option>
+                        </select>
+                    </div>
+                    <div class="opt">
+                        <label for="timeQueued">Time Queued</label>
+                        <input type="hidden" id="TimeQueued" name="TimeQueued" min="1:00" max="12:00" required />
+                    </div>
+                    <div class="opt">
+                        <label for="dateQueued">Date Queued</label>
+                        <input  type="date" id="QueueDate" name="QueueDate" required />
+                    </div>
+                    <div class="opt">
+                        <label for="startTime">Start Time</label>
+                        <input type="hidden" id="StartTime" name="StartTime" min="1:00" max="12:00"  required />
+                    </div>
+                    <div class="opt">
+                        <label for="endTime">End Time</label>
+                        <input type="hidden" id="EndTime" name="EndTime" min="1:00" max="12:00" required />
+                    </div>
+                    <div class="opt">
+                        <label for="type">Type</label>
+                        <select id="opSelect" name="type">
+                            <option value="Consultation">Consultation</option>
+                            <option value="Inpatient">Inpatient</option>
+                        </select>
+                    </div>
+                    <div class="opt">
+                        <label for="virtual">Virtual</label>
+                        <select id="opSelect" name="virtual">
+                            <option value="1">Yes</option>
+                            <option value="0">No</option>
+                        </select>
                     </div>
                 </div>
                 <button type="submit" onclick="addSubmit(event)">Submit</button>
