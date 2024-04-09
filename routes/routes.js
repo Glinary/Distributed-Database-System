@@ -9,5 +9,7 @@ router.get("/doctors", controller.getDoctors);
 router.get("/appointments", controller.getAppointments);
 
 router.post("/postAppointment", controller.postAppointment);
+router.post("/editAppointment", controller.editAppointment);
+router.post("/deleteAppointment", controller.deleteAppointment);
 
 export default router;

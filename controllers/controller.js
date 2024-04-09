@@ -237,6 +237,54 @@ const controller = {
     }); 
   },
 
+  editAppointment: async function (req, res) {
+    console.log("--- Editing appointment ---")
+    let location = 'luzon'; //TODO: make a function to get if location if luzon or vismin
+    //TODO: change to req.body dynamic (hardcoded for now to test)
+    let status = 'Complete';
+    let apptid = '00000MMMMMMMMMMMMMMMMMMMMMMMMMMM';
+
+    let node = location == 'luzon' ? connect.luzon_node : connect.vismin_node;
+
+    //update subnode
+    try {
+      // Update subnode
+      const result = await connect.dbQuery(node, "UPDATE appt_main SET status = ? WHERE apptid = ?", [status, apptid]);
+      console.log('Appointment successfully updated');
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send('Error: appointment was not updated');
+    }
+
+    res.render("home", {
+      maincss: "/static/css/main.css",
+      mainscript: "/static/js/home.js",
+    }); 
+  },
+
+  deleteAppointment: async function (req, res) {
+    console.log("--- Editing appointment ---")
+    let location = 'luzon'; //TODO: make a function to get if location if luzon or vismin
+    //TODO: change to req.body dynamic (hardcoded for now to test)
+    let apptid = '00000MMMMMMMMMMMMMMMMMMMMMMMMMMM';
+
+    let node = location == 'luzon' ? connect.luzon_node : connect.vismin_node;
+
+    try {
+      // Update subnode
+      const result = await connect.dbQuery(node, "DELETE FROM appt_main WHERE apptid = ?", [apptid]);
+      console.log('Appointment successfully updated');
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send('Error: appointment was not updated');
+    }
+
+    res.render("home", {
+      maincss: "/static/css/main.css",
+      mainscript: "/static/js/home.js",
+    }); 
+  },
+
 };
 
 function getCurrentDate() {

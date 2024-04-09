@@ -337,7 +337,7 @@ function listen_connections() {
       
 
       if (connected && connection) {
-          console.log('Connected to own node');
+          console.log('Server connection is healthy');
           connection.release();
 
           // If the node was recently disconnected, we need to
@@ -347,7 +347,7 @@ function listen_connections() {
           }
           recentlyDisconnected = false;
       } else {
-          console.log('own node connection lost. Reconnecting...');
+          console.log('Server connection interrupted. Reconnecting...');
           recentlyDisconnected = true;
       }
 
