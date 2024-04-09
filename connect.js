@@ -322,7 +322,7 @@ function listen_connections() {
   let connected = false;
   // Periodically check the connections
   setInterval( async () => {
-      let connection = [];
+      let connection;
       try {
           if (process.env.NODE_NUM_CONFIGURATION == 1) 
               connection = await central_node.getConnection();
@@ -335,7 +335,6 @@ function listen_connections() {
           connected = false;
       }
       
-
       if (connected && connection) {
           console.log('Server connection is healthy');
           connection.release();
