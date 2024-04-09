@@ -148,10 +148,11 @@ async function dbQuery(pool, query, content, callback) {
       // Feature: Rollback when there is an error
       if (connection) await connection.rollback();
 
-      // TODO: storyQeuery for logs if needed
+
       let query_type = query.split(" ")[0];
       if (process.env.NODE_NUM_CONFIGURATION != 1 && query_type != "SELECT")
-          //await storeQuery(pool, query, content);
+          await storeQuery(pool, query, content);
+
 
       callback(err);
 
@@ -164,6 +165,104 @@ async function dbQuery(pool, query, content, callback) {
   }
 }
 
+async function storeQuery(dbPool, query, content) {
+  let t_type = query.split(" ")[0];   // Get the first word of the query
+  let t_dest = [];    // Destination node(s) for the transaction
+
+  console.log("STORING FAILED TRANSACTION: "+query+content);
+
+  let connection = await self_node.getConnection();
+
+  // Determine the destination node(s) for the transaction   
+  if (dbPool == central_node) { t_dest = 1; }
+  else if (dbPool == luzon_node) { t_dest = 2; }
+  else if (dbPool == vismin_node) { t_dest = 3; }
+  else {
+      t_dest = -1
+      console.log("Error: Unknown hostname");
+  }
+
+  // Insert into local logs
+  let localQuery = "INSERT INTO appt_logs (pxid,clinicid,doctorid,apptid,status,TimeQueued,QueueDate,StartTime,EndTime,type,Virtual,t_type,t_dest) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+  let localContent = [content.pxid, content.clinicid, content.doctorid, content.apptid, content.status, content.TimeQueued, content.StartTime, content.EndTime, content.type, content.Virtual, t_type, t_dest];
+
+  let queryConnection = await self_node.getConnection();
+
+  await queryConnection.query(localQuery, localContent, (err, result) => {
+      if (err) {
+          console.log(err);
+      } else {
+          console.log("Local log inserted: "+result);
+      }
+  });
+
+  // Close
+  connection.release();
+  queryConnection.release();
+}
+
+async function recoverTransactions(connection) {
+  const [central_node_logs] = await grabLogsOfPool(central_node);
+  const [luzon_node_logs] = await grabLogsOfPool(luzon_node);
+  const [vismin_node_logs] = await grabLogsOfPool(vismin_node);
+
+  // Database Recovery
+  console.log ("Recovering transactions...")
+  // Logs
+  console.log("Central Node Logs:", central_node_logs);
+  console.log("Luzon Node Logs:", luzon_node_logs);
+  console.log("Visayas Mindanao Logs:", vismin_node_logs);
+
+  // Inserts the logs into the database
+  for (let i = 0; i < 3; i++) {
+      let node_logs = [];
+      switch(i) {
+          case 0:
+              node_logs = central_node_logs;
+              break;
+          case 1:
+              node_logs = luzon_node_logs;
+              break;
+          case 2:
+              node_logs = vismin_node_logs;
+              break;
+          default:
+              console.log("Error: Unknown node");
+              break;
+      }
+
+      for (let j = 0; j < node_logs.length; j++) {
+          let log = node_logs[j];
+
+          let logsSourceNode = [];
+          if (i == 0) logsSourceNode = central_node;
+          else if (i == 1) logsSourceNode = luzon_node;
+          else if (i == 2) logsSourceNode = vismin_node;
+
+          // Commit the transaction
+          commitTransaction(log, logsSourceNode);
+      }
+  }
+}
+
+async function grabLogsOfPool(dbPool) {
+  console.log("GRABBING LOGS")
+  let logs = [];
+
+  let connection = await dbPool.getConnection();
+
+  const result = await dbPool.query("SELECT * FROM appt_logs");
+
+  connection.release();
+
+  for (let i = 0; i < result.length; i++) {
+      logs.push(result[i]);
+  }
+
+  console.log("ACQUIRED LOGS")
+  return logs;
+}
+
 // This function is used to commit a transaction to the database.
 // log - node to be commited
 // currnode - active node
@@ -173,39 +272,39 @@ async function commitTransaction(log, currnode) {
   let query = "INSERT INTO appt_main (pxid,clinicid,doctorid,apptid,status,TimeQueued,QueueDate,StartTime,EndTime,type,Virtual) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
   let content = [log.pxid, log.clinicid, log.apptid, log.status, log.TimeQueued, log.StartTime, log.EndTime, log.type, log.Virtual];
 
-  // Set destination node
-  // let connection;
-  // if (log.T_Dest == 1) connection = await node_1.getConnection();
-  // else if (log.T_Dest == 2) connection = await node_2.getConnection();
-  // else if (log.T_Dest == 3) connection = await node_3.getConnection();
-  // else {
-  //     console.log("Error: Unknown destination node");
-  //     console.log(log);
-  // }
+  //Set destination node
+  let connection;
+  if (log.T_Dest == 1) connection = await central_node.getConnection();
+  else if (log.T_Dest == 2) connection = await luzon_node.getConnection();
+  else if (log.T_Dest == 3) connection = await vismin_node.getConnection();
+  else {
+      console.log("Error: Unknown destination node");
+      console.log(log);
+  }
 
-  // Commit the transaction
-  // console.log("Committing transaction: "+query+" : "+content);
-  // await connection.query(query, content, (err, result) => {
-  //     if (err) {
-  //         console.log(err)
-  //     } else {
-  //         console.log("Recovered transaction: "+result);
+  //Commit the transaction
+  console.log("Committing transaction: "+query+" : "+content);
+  await connection.query(query, content, (err, result) => {
+      if (err) {
+          console.log(err)
+      } else {
+          console.log("Recovered transaction: "+result);
 
-  //         // Delete the log from the local logs
-  //         let deleteQuery = "DELETE FROM movies_logs WHERE id = ?";
-  //         let deleteContent = [log.id];
-  //         let deleteNode = currnode;
+          // Delete the log from the local logs
+          let deleteQuery = "DELETE FROM appt_logs WHERE apptid = ?";
+          let deleteContent = [log.apptid];
+          let deleteNode = currnode;
 
-  //         deleteNode.query(deleteQuery, deleteContent, (err, result) => {
-  //             if (err) {
-  //                 console.log('Error during log deletion: ')
-  //                 console.log(err);
-  //             } else {
-  //                 console.log("Local log deleted: "+result);
-  //             }
-  //         });
-  //     }
-  // });
+          deleteNode.query(deleteQuery, deleteContent, (err, result) => {
+              if (err) {
+                  console.log('Error during log deletion: ')
+                  console.log(err);
+              } else {
+                  console.log("Local log deleted: "+result);
+              }
+          });
+      }
+  });
 }
 
 
@@ -220,6 +319,43 @@ function gracefulShutdown(node) {
   });
 }
 
+function listen_connections() {
+  let recentlyDisconnected = false;
+  let connected = false;
+  // Periodically check the connections
+  setInterval( async () => {
+      let connection = [];
+      try {
+          if (process.env.NODE_NUM_CONFIGURATION == 1) 
+              connection = await central_node.getConnection();
+          else if (process.env.NODE_NUM_CONFIGURATION == 2)
+              connection = await luzon_node.getConnection();
+          else if (process.env.NODE_NUM_CONFIGURATION == 3)
+              connection = await vismin_node.getConnection();
+          connected = true;
+      } catch (err) {
+          connected = false;
+      }
+      
+
+      if (connected && connection) {
+          console.log('Server connection is healthy');
+          connection.release();
+
+          // If the node was recently disconnected, we need to
+          // recover transactions that were not committed
+          if (connected && recentlyDisconnected) {
+              await recoverTransactions(connection);
+          }
+          recentlyDisconnected = false;
+      } else {
+          console.log('Server connection interrupted. Reconnecting...');
+          recentlyDisconnected = true;
+      }
+
+  }, 10000); // Interval in milliseconds (e.g., 5000ms = 5 seconds)
+}
+
 //TODO: update to export latest functions
 const connect = {
   switchConnection,
@@ -227,6 +363,7 @@ const connect = {
   dbQuery,
   commitTransaction,
   gracefulShutdown,
+  listen_connections,
   self_node, 
   central_node,
   luzon_node,
