@@ -85,6 +85,26 @@ const controller = {
   getAllData: async function (req, res) {
     console.log("---HERE---");
 
+    const category = req.body.data;
+    const pageNum = req.body.pageNum;
+
+    const categories = {
+      alldoctors: `SELECT doctorid, mainspecialty AS "Main Specialty", age FROM doctors LIMIT 15 OFFSET ${
+        (pageNum - 1) * 15
+      };`,
+      allclinic: `SELECT * FROM clinics LIMIT 15 OFFSET ${(pageNum - 1) * 15};`,
+      allpatients: `SELECT * FROM px LIMIT 15 OFFSET ${(pageNum - 1) * 15};`,
+      alldata: `SELECT pxid, clinicid, doctorid, apptid, status,
+                      DATE_FORMAT(TimeQueued, "%l:%i %p") AS "Time Queued",
+                      DATE_FORMAT(TimeQueued, "%M %d, %Y") AS "Date Queued",
+                      DATE_FORMAT(StartTime, "%l:%i %p") AS "Start Time",
+                      DATE_FORMAT(EndTime, "%l:%i %p") AS "End Time",
+                      type AS "Type", appt_main.virtual AS "Virtual"
+               FROM appt_main LIMIT 15 OFFSET ${(pageNum - 1) * 15};`,
+    };
+
+    console.log(categories[category]);
+
     async function connectionReRoute() {
       let connection;
       try {
@@ -105,13 +125,16 @@ const controller = {
         }
       }
     }
+
     console.log("Getting data...");
     let node;
+
+    const sql = categories[category];
 
     await connectionReRoute();
     const [result] = await connect.dbQuery(
       node,
-      "SELECT * FROM appt_main LIMIT 15",
+      `SELECT * FROM appt_main LIMIT 15`,
       []
     );
 
