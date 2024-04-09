@@ -178,48 +178,30 @@ const controller = {
   },
 
   getAddToDB: async function (req, res) {
-    const category = req.body.category;
-    console.log("Category: ", category);
     let location = "luzon";
+    var data = req.body.json;
+    var {
+      pxid,
+      clinicid,
+      doctorid,
+      status,
+      TimeQueued,
+      QueueDate,
+      StartTime,
+      EndTime,
+      type,
+      virtual,
+    } = JSON.parse(data);
 
-    if (category == "patients") {
-      var data = req.body.json;
-      var { age, gender } = JSON.parse(data);
+    // format date and time to get accepted in DB
+    TimeQueued = formattedDatetime(TimeQueued);
+    StartTime = formattedDatetime(StartTime);
+    EndTime = formattedDatetime(EndTime);
 
-      var table = "px";
-      var primaryKey = "pxid";
-    } else if (category == undefined) {
-      var data = req.body.json;
+    // SQL query to retrieve the last inserted ID from appt_main table
+    var sqlLastId = `SELECT apptid as keyid FROM appt_main ORDER BY apptid DESC LIMIT 1`;
 
-      var table = "appt_main";
-      var primaryKey = "apptid";
-
-      var {
-        pxid,
-        clinicid,
-        doctorid,
-        status,
-        TimeQueued,
-        QueueDate,
-        StartTime,
-        EndTime,
-        type,
-        virtual,
-      } = JSON.parse(data);
-
-      console.log("This: ", TimeQueued);
-
-      TimeQueued = formattedDatetime(TimeQueued);
-      StartTime = formattedDatetime(StartTime);
-      EndTime = formattedDatetime(EndTime);
-    }
-
-    console.log("virtual: ", virtual);
-
-    // SQL query to retrieve the last inserted ID from the 'px' table
-    var sqlLastId = `SELECT ${primaryKey} as keyid FROM ${table} ORDER BY ${primaryKey} DESC LIMIT 1`;
-
-    // Retrieve the last inserted ID from the 'px' table
+    // Retrieve the last inserted ID from the appt_main table
     db.query(sqlLastId, async (err, result) => {
       if (err) {
         console.error("Error retrieving last ID from database:", err);
@@ -248,31 +230,27 @@ const controller = {
         // Convert nextID to uppercase
         nextID = nextID.toUpperCase();
 
-        if (category == "patients") {
-          var appt_set = [nextID, age, gender];
-        } else if (category == undefined) {
-          var apptid = nextID;
-          var appt_set = {
-            pxid,
-            clinicid,
-            doctorid,
-            apptid,
-            status,
-            TimeQueued,
-            QueueDate,
-            StartTime,
-            EndTime,
-            type,
-            virtual,
-          };
-        }
+        var apptid = nextID;
+        var appt_set = {
+          pxid,
+          clinicid,
+          doctorid,
+          apptid,
+          status,
+          TimeQueued,
+          QueueDate,
+          StartTime,
+          EndTime,
+          type,
+          virtual,
+        };
 
         let node =
           location == "luzon" ? connect.luzon_node : connect.vismin_node;
 
         await connect.dbQuery(
           node,
-          `INSERT INTO ${table} SET ?`,
+          `INSERT INTO appt_main SET ?`,
           appt_set,
           (err, res) => {
             if (err) {

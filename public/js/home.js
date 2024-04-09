@@ -61,7 +61,6 @@ function setDefaultTime(timeVar) {
   // Set the value of the time input field to the current time
   var currentTime = hours + ":" + minutes;
   document.getElementById(timeVar).value = currentTime;
-  document.getElementById(timeVar).disbaled = true;
 }
 
 function setDefaultDate(dateVar) {
