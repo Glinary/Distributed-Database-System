@@ -1,9 +1,27 @@
-onload();
+const pathname = window.location.pathname;
+const pathSegments = pathname.split("/").filter((segment) => segment !== "");
+const category = pathSegments[0]; // This will be 'doctors' or 'clinic' based on the URL
+
+console.log(category);
+
+categories = {
+  doctors: "alldoctors",
+  clinics: "allclinic",
+  patients: "allpatients",
+  undefined: "alldata",
+};
+
+onload(category);
 
 async function onload() {
   console.log("I AM HERE");
-  const response = await fetch("/ad", {
+  body = {
+    data: categories[category],
+  };
+
+  const response = await fetch(`/alldata`, {
     method: "POST",
+    body: JSON.stringify(body),
     headers: {
       "Content-Type": "application/json",
     },

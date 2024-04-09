@@ -86,8 +86,20 @@ const controller = {
 
   getAllData: async function (req, res) {
     console.log("---HERE---");
+
+    const category = req.body.data;
+
+    const categories = {
+      alldoctors:
+        'select doctorid, mainspecialty as "Main Specialty", age from doctors limit 10;',
+      allclinic: "select * from clinics LIMIT 10;",
+      allpatients: "select * from px LIMIT 10;",
+      alldata:
+        'select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "Time Queued",  DATE_FORMAT(TimeQueued, "%M %d, %Y") as "Date Queued", DATE_FORMAT(StartTime, "%l:%i %p") as "Start Time", DATE_FORMAT(EndTime, "%l:%i %p") as "End Time", type as "Type", appt_main.virtual as "Virtual" FROM appt_main LIMIT 10;',
+    };
+
     try {
-      const sqlCentralDB = "SELECT * FROM appt_main LIMIT 10;";
+      const sqlCentralDB = categories[category];
       db.query(sqlCentralDB, (err, results) => {
         if (err) {
           console.error(`Error fetching appointments from CentralDB: ${err}`);
@@ -104,9 +116,7 @@ const controller = {
   },
 
   getDoctors: async function (req, res) {
-    viewDoctors();
-
-    //TODO: CHANGE LATER
+    //viewDoctors();
     res.render("home", {
       maincss: "/static/css/main.css",
       mainscript: "/static/js/home.js",
