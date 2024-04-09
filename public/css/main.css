@@ -8,6 +8,14 @@
 * {
   padding: 0;
   margin: 0;
+  font-family: var(--main-font);
+}
+
+.home {
+  width: 100%;
+  height: 100vh;
+  padding: 1rem;
+  box-sizing: border-box;
 }
 
 .menu-bar {
@@ -37,11 +45,12 @@
 }
 
 #table-container {
+  width: 100%;
   display: flex;
   justify-content: center;
   font-family: var(--main-font);
   /* background-color: #a19e9e; */
-  padding: 1rem;
+  padding: 2rem 0rem;
 
   table {
     border: 0.5px solid black;
@@ -71,4 +80,63 @@
     background-color: rgb(237, 233, 228);
     padding: 0.5vw;
   }
+}
+
+.button-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 2rem;
+  /* background-color: #a19e9e; */
+}
+
+button {
+  padding: 0.15rem;
+  font-size: 0.85vw;
+}
+
+.operation {
+  width: auto;
+  padding: 1rem;
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+  background-color: #f6f3f3;
+  box-sizing: content-box;
+  display: none;
+}
+
+#patient-add,
+#doctor-add {
+  display: none;
+}
+
+form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.elements {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* Three columns with equal width */
+  grid-template-rows: 2rem 1fr;
+  gap: 1rem; /* Spacing between grid items */
+}
+
+input,
+label,
+option {
+  font-size: 1.15vw;
+}
+
+/* label {
+  margin: 1rem;
+} */
+
+input[type="number"] {
+  width: 2rem;
 }
