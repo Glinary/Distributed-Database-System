@@ -29,11 +29,17 @@ async function onload() {
 
 function checkPage() {
   const patientAdd = document.getElementById("patient-add");
+  const doctorAdd = document.getElementById("doctor-add");
   const operation = document.querySelector(".operation");
 
-  if (category == "patients" && currOperation == "Add") {
-    patientAdd.style.display = "block";
-    operation.style.display = "flex";
+  if (currOperation == "Add") {
+    if (category == "patients") {
+      patientAdd.style.display = "block";
+      operation.style.display = "flex";
+    } else if (category == "doctors") {
+      doctorAdd.style.display = "block";
+      operation.style.display = "flex";
+    }
   }
 }
 

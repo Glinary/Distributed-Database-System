@@ -107,7 +107,8 @@ button {
   display: none;
 }
 
-#patient-add {
+#patient-add,
+#doctor-add {
   display: none;
 }
 
