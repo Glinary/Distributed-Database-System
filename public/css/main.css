@@ -41,7 +41,7 @@
   justify-content: center;
   font-family: var(--main-font);
   /* background-color: #a19e9e; */
-  padding: 1rem;
+  padding: 2rem 0rem;
 
   table {
     border: 0.5px solid black;
