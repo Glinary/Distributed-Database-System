@@ -10,6 +10,9 @@
   margin: 0;
 }
 
+.home {
+  padding: 1rem;
+}
 .menu-bar {
   width: 100%;
   height: fit-content;
@@ -70,5 +73,18 @@
   tr:nth-child(even) {
     background-color: rgb(237, 233, 228);
     padding: 0.5vw;
+  }
+}
+
+.button-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  /* background-color: #a19e9e; */
+
+  button {
+    padding: 0.15rem;
+    font-size: 0.85vw;
   }
 }

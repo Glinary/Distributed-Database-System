@@ -88,14 +88,17 @@ const controller = {
     console.log("---HERE---");
 
     const category = req.body.data;
+    const pageNum = req.body.pageNum;
 
     const categories = {
-      alldoctors:
-        'select doctorid, mainspecialty as "Main Specialty", age from doctors limit 15;',
-      allclinic: "select * from clinics LIMIT 15;",
-      allpatients: "select * from px LIMIT 15;",
-      alldata:
-        'select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "Time Queued",  DATE_FORMAT(TimeQueued, "%M %d, %Y") as "Date Queued", DATE_FORMAT(StartTime, "%l:%i %p") as "Start Time", DATE_FORMAT(EndTime, "%l:%i %p") as "End Time", type as "Type", appt_main.virtual as "Virtual" FROM appt_main LIMIT 15;',
+      alldoctors: `select doctorid, mainspecialty as "Main Specialty", age from doctors limit 15 offset ${
+        (pageNum - 1) * 15
+      };`,
+      allclinic: `select * from clinics LIMIT 15 offset ${(pageNum - 1) * 15};`,
+      allpatients: `select * from px LIMIT 15 offset ${(pageNum - 1) * 15};`,
+      alldata: `select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "Time Queued",  DATE_FORMAT(TimeQueued, "%M %d, %Y") as "Date Queued", DATE_FORMAT(StartTime, "%l:%i %p") as "Start Time", DATE_FORMAT(EndTime, "%l:%i %p") as "End Time", type as "Type", appt_main.virtual as "Virtual" FROM appt_main LIMIT 15 offset ${
+        (pageNum - 1) * 15
+      };`,
     };
 
     try {
@@ -107,6 +110,34 @@ const controller = {
           console.log("Appointments from CentralDB");
           console.table(results);
           res.status(200).json({ rows: results });
+        }
+      });
+    } catch (error) {
+      console.error("Error querying database:", error);
+      res.status(500).send("Internal Server Error");
+    }
+  },
+
+  getDataCount: async function (req, res) {
+    const category = req.body.category;
+    console.log(category);
+
+    const categories = {
+      doctors: "doctors",
+      clinics: "clinics",
+      patients: "px",
+      undefined: "appt_main",
+    };
+
+    try {
+      const sqlCentralDB = `SELECT COUNT(*) as count FROM ${categories[category]};`;
+      db.query(sqlCentralDB, (err, results) => {
+        if (err) {
+          console.error(`Error fetching appointments from CentralDB: ${err}`);
+        } else {
+          console.log("Appointments from CentralDB");
+          console.table(results);
+          res.status(200).json({ rowsCount: results });
         }
       });
     } catch (error) {
