@@ -188,40 +188,64 @@ const controller = {
       });
     }
        
-  }
+  },
+
+  postAppointment: async function (req, res) {
+    console.log("--- Adding appointment ---")
+    let location = 'luzon'; //TODO: make a function to get if location if luzon or vismin
+    //TODO: change to req.body dynamic (hardcoded for now to test)
+    let pxid = '00000AAAAAAAAAAAAAAAAAAAAAAAAAAA';
+    let clinicid = '00000HHHHHHHHHHHHHHHHHHHHHHHHHHH';
+    let doctorid = '00000EEEEEEEEEEEEEEEEEEEEEEEEEEE';
+    let apptid = '00000MMMMMMMMMMMMMMMMMMMMMMMMMMM';
+    let status = 'Queued';
+    let TimeQueued;
+    let QueueDate;
+    let StartTime;
+    let EndTime;
+    let type = 'Consultation';
+    let Virtual = '0';
+
+    //TODO: clarify how the times will bet set and changes in status
+    const appt_set = { pxid, clinicid, doctorid, apptid, status, TimeQueued, QueueDate, StartTime, EndTime, type, Virtual};
+
+    //TODO: uncomment once there are multiple nodes since adding to the same database will give a duplicate key error
+    // update central node
+    // await connect.dbQuery(connect.central_node, "INSERT INTO appt_main SET ?", appt_set, (err, result) => {
+    //   if (err) {
+    //     console.log(err);
+    //   } else {
+    //     console.log("updated central node");
+    //   }
+    // })
+
+    let node = location == 'luzon' ? connect.luzon_node : connect.vismin_node;
+
+    //update subnode
+    await connect.dbQuery(node, "INSERT INTO appt_main SET ?", appt_set, (err, res) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send('Error: appointment was not registered.');
+      } else {
+        console.log('Appointment successfully submitted');
+        
+      }
+    })  
+    res.render("home", {
+      maincss: "/static/css/main.css",
+      mainscript: "/static/js/home.js",
+    }); 
+  },
+
 };
 
+function getCurrentDate() {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = (now.getUTCMonth() + 1).toString().padStart(2, '0'); // Months are zero-indexed
+  const day = now.getUTCDate().toString().padStart(2, '0');
+  const formattedDate = `${year}-${month}-${day}T08:00:00.000Z`;
+  return formattedDate;
+}
+
 export default controller;
-
-
-///////////////// DRAFT //////////////////////////
-
-// import express from "express";
-// import bodyParser from "body-parser";
-// import mysql from "mysql2";
-// import connect from "../connect.js"
-// import "dotenv/config";
-
-// const LOCAL_DB_PASSWORD = process.env.LOCAL_DB_PASSWORD;
-
-// const app = express();
-// app.use(bodyParser.json());
-
-// //use function to check connections to 3 nodes
-// //checkConnections();
-
-// // use function to view 10 doctors
-// // viewDoctors()
-
-// const controller = {
-//   getHome: async function (req, res) {
-//     let connection = await conn.node_1.getConnection();
-//     res.render("home", {
-//       maincss: "/static/css/main.css",
-//       mainscript: "/static/js/home.js",
-//     });
-//   },
-  
-// };
-
-// export default controller;

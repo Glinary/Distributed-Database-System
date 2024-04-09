@@ -8,4 +8,6 @@ router.post("/ad", controller.getAllData);
 router.get("/doctors", controller.getDoctors);
 router.get("/appointments", controller.getAppointments);
 
+router.post("/postAppointment", controller.postAppointment);
+
 export default router;
