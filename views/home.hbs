@@ -1,7 +1,36 @@
 <section class="home">
+    <select id="opSelect">
+        <option value="Read">Read</option>
+        <option value="Add">Add</option>
+        <option value="Delete">Delete</option>
+        <option value="Update">Update</option>
+    </select>
+
     <div id="table-container"></div>
     <div class="button-wrapper">
         <button id="prevButton">Previous Page</button>
         <button id="nextButton">Next Page</button>
+    </div>
+
+    <div class="operation">
+        <div class="add-op" id="patient-add">
+             <form id="addForm">
+                <div class="elements">
+                    <div class="opt">
+                        <label for="Age">Age</label>
+                        <input type="number" id="age" name="age" min="0" step="1" required>
+                    </div>
+
+                    <div class="opt">
+                        <label for="gender">Gender</label>
+                        <select id="opSelect" name="gender">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select><br><br>
+                    </div>
+                </div>
+                <button type="submit" onclick="addSubmit(event)">Submit</button>
+            </form>
+        </div>
     </div>
 </section>
