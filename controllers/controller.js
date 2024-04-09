@@ -1,7 +1,6 @@
 import express from "express";
 import bodyParser from "body-parser";
 import mysql from "mysql2";
-import db1 from "../localdb.js"; // Import the database module
 
 const app = express();
 app.use(bodyParser.json());
@@ -10,7 +9,7 @@ app.use(bodyParser.json());
 const centralDB = {
   host: "localhost",
   user: "root",
-  password: "12345678Eiffel",
+  password: "12345",
   database: "stadvdbmco1",
 };
 const luzonDB = { ...centralDB, database: "stadvdbmco1" }; //TODO: CHANGE LATER
