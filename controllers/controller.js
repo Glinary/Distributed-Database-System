@@ -1,6 +1,9 @@
 import express from "express";
 import bodyParser from "body-parser";
 import mysql from "mysql2";
+import "dotenv/config";
+
+const PASSWORD = process.env.PASSWORD;
 
 const app = express();
 app.use(bodyParser.json());
@@ -9,7 +12,7 @@ app.use(bodyParser.json());
 const centralDB = {
   host: "localhost",
   user: "root",
-  password: "12345678Eiffel",
+  password: PASSWORD,
   database: "stadvdbmco1",
 };
 const luzonDB = { ...centralDB, database: "stadvdbmco1" }; //TODO: CHANGE LATER
