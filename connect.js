@@ -207,9 +207,9 @@ async function recoverTransactions(connection) {
   // Database Recovery
   console.log ("Recovering transactions...")
   // Logs
-  console.log("Central Node Logs: "+central_node_logs);
-  console.log("Luzon Node Logs: "+luzon_node_logs);
-  console.log("Visayas Mindanao Logs: "+vismin_node_logs);
+  console.log("Central Node Logs:", central_node_logs);
+  console.log("Luzon Node Logs:", luzon_node_logs);
+  console.log("Visayas Mindanao Logs:", vismin_node_logs);
 
   // Inserts the logs into the database
   for (let i = 0; i < 3; i++) {
@@ -317,6 +317,43 @@ function gracefulShutdown(node) {
   });
 }
 
+function listen_connections() {
+  let recentlyDisconnected = false;
+  let connected = false;
+  // Periodically check the connections
+  setInterval( async () => {
+      let connection = [];
+      try {
+          if (process.env.NODE_NUM_CONFIGURATION == 1) 
+              connection = await central_node.getConnection();
+          else if (process.env.NODE_NUM_CONFIGURATION == 2)
+              connection = await luzon_node.getConnection();
+          else if (process.env.NODE_NUM_CONFIGURATION == 3)
+              connection = await vismin_node.getConnection();
+          connected = true;
+      } catch (err) {
+          connected = false;
+      }
+      
+
+      if (connected && connection) {
+          console.log('Connected to own node');
+          connection.release();
+
+          // If the node was recently disconnected, we need to
+          // recover transactions that were not committed
+          if (connected && recentlyDisconnected) {
+              await recoverTransactions(connection);
+          }
+          recentlyDisconnected = false;
+      } else {
+          console.log('own node connection lost. Reconnecting...');
+          recentlyDisconnected = true;
+      }
+
+  }, 10000); // Interval in milliseconds (e.g., 5000ms = 5 seconds)
+}
+
 //TODO: update to export latest functions
 const connect = {
   switchConnection,
@@ -324,6 +361,7 @@ const connect = {
   dbQuery,
   commitTransaction,
   gracefulShutdown,
+  listen_connections,
   self_node, 
   central_node,
   luzon_node,
