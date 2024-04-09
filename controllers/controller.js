@@ -154,16 +154,15 @@ const controller = {
     if (node === connect.central_node) {
       //sample of how to read output
       appointments.forEach(appointment => {
-        console.log(appointment.status);
+        console.log(appointment.pxid);
       });
       
-      res.render("appointments", {
+      res.render("home", {
       maincss: "/static/css/main.css",
       mainscript: "/static/js/home.js",
-      appointments: appointments,
       });
     } else {
-      const [result2] = await connect.dbQuery(node === conn.node_2 ? conn.node_3 : conn.node_2, "SELECT * FROM appt_main", []);
+      const [result2] = await connect.dbQuery(node === connect.luzon_node ? connect.vismin_node : connect.luzon_node, "SELECT * FROM appt_main", []);
       const appointments2 = result2.map(row => ({
         pxid: row.pxid,
         clinicid: row.clinicid,
@@ -183,10 +182,9 @@ const controller = {
       appointments2.forEach(appointment2 => {
         console.log(appointment2.status);
       });
-      res.render("appointments", {
+      res.render("home", {
         maincss: "/static/css/main.css",
         mainscript: "/static/js/home.js",
-        appointments: appointments,
       });
     }
        
