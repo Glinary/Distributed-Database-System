@@ -4,6 +4,7 @@ import controller from "../controllers/controller.js";
 const router = Router();
 
 router.get("/", controller.getHome);
+router.post("/ad", controller.getAllData);
 router.get("/doctors", controller.getDoctors);
 
 export default router;
