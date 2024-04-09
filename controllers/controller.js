@@ -1,9 +1,7 @@
 import express from "express";
 import bodyParser from "body-parser";
 import mysql from "mysql2";
-import "dotenv/config";
-
-const PASSWORD = process.env.PASSWORD;
+import connect from "../connect.js"
 
 const app = express();
 app.use(bodyParser.json());
@@ -12,7 +10,7 @@ app.use(bodyParser.json());
 const centralDB = {
   host: "localhost",
   user: "root",
-  password: PASSWORD,
+  password: process.env.LOCAL_DB_PASSWORD,
   database: "stadvdbmco1",
 };
 const luzonDB = { ...centralDB, database: "stadvdbmco1" }; //TODO: CHANGE LATER
@@ -112,6 +110,120 @@ const controller = {
       mainscript: "/static/js/home.js",
     });
   },
+
+  getAppointments: async function (req, res) {
+    
+    async function connectionReRoute() {
+      let connection;
+      try {
+        connection = connect.central_node.getConnection();
+        node = connect.central_node;
+      } catch (err) {
+          try {
+              connection = connect.luzon_node.getConnection();
+              node = connect.luzon_node;
+          } catch (err) {
+              try {
+                  connection = connect.vismin_node.getConnection();
+                  node = connect.vismin_node;
+              } catch (err) {
+                  console.log(err);
+                  res.status(500).send('Error retrieving data from database');
+              }
+          }
+      }
+    }
+    console.log("Getting data...");
+    let node;
+        
+    await connectionReRoute();
+    const [result] = await connect.dbQuery(node, "SELECT * FROM appt_main", []);
+    const appointments = result.map(row => ({
+      pxid: row.pxid,
+      clinicid: row.clinicid,
+      doctorid: row.doctorid,
+      apptid: row.apptid,
+      status: row.status,
+      TimeQueued: row.TimeQueued,
+      QueueDate: row.QueueDate,
+      StartTime: row.StartTime,
+      EndTime: row.EndTime,
+      Virtual: row.Virtual
+    }));
+
+    if (node === connect.central_node) {
+      //sample of how to read output
+      appointments.forEach(appointment => {
+        console.log(appointment.status);
+      });
+      
+      res.render("appointments", {
+      maincss: "/static/css/main.css",
+      mainscript: "/static/js/home.js",
+      appointments: appointments,
+      });
+    } else {
+      const [result2] = await connect.dbQuery(node === conn.node_2 ? conn.node_3 : conn.node_2, "SELECT * FROM appt_main", []);
+      const appointments2 = result2.map(row => ({
+        pxid: row.pxid,
+        clinicid: row.clinicid,
+        doctorid: row.doctorid,
+        apptid: row.apptid,
+        status: row.status,
+        TimeQueued: row.TimeQueued,
+        QueueDate: row.QueueDate,
+        StartTime: row.StartTime,
+        EndTime: row.EndTime,
+        Virtual: row.Virtual
+      }));
+      const combinedData = appointments.concat(appointments2);
+      const uniqueData = [...new Map(combinedData.map(item => [item.id, item])).values()];
+      uniqueData.sort((a, b) => a.id - b.id);
+      //sample of how to read output
+      appointments2.forEach(appointment2 => {
+        console.log(appointment2.status);
+      });
+      res.render("appointments", {
+        maincss: "/static/css/main.css",
+        mainscript: "/static/js/home.js",
+        appointments: appointments,
+      });
+    }
+       
+  }
 };
 
 export default controller;
+
+
+///////////////// DRAFT //////////////////////////
+
+// import express from "express";
+// import bodyParser from "body-parser";
+// import mysql from "mysql2";
+// import connect from "../connect.js"
+// import "dotenv/config";
+
+// const LOCAL_DB_PASSWORD = process.env.LOCAL_DB_PASSWORD;
+
+// const app = express();
+// app.use(bodyParser.json());
+
+// //use function to check connections to 3 nodes
+// //checkConnections();
+
+// // use function to view 10 doctors
+// // viewDoctors()
+
+// const controller = {
+//   getHome: async function (req, res) {
+//     let connection = await conn.node_1.getConnection();
+//     res.render("home", {
+//       maincss: "/static/css/main.css",
+//       mainscript: "/static/js/home.js",
+//     });
+//   },
+  
+// };
+
+// export default controller;
