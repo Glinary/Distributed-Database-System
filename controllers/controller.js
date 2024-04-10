@@ -61,6 +61,7 @@ const controller = {
       // };`,
     };
 
+    //TODO: Search on the chosen node first before querying on central node, then fail if wala talaga
     async function connectionReRoute() {
       let connection;
       try {
@@ -120,7 +121,7 @@ const controller = {
   },
 
   postAppointment: async (req, res) => {
-    try {
+    try {//TODO: make a function to get location of where user wants to add
       const location = "luzon";
       const jsonData = req.body.json;
       const {
@@ -188,6 +189,12 @@ const controller = {
         virtual,
       };
 
+      /*
+      TODO: Insert the appointment data into the central node first, 
+            if node is not initially equal to central node
+      */
+      // 
+
       // Insert the appointment data into the database
       const insertResult = await connect.dbQuery(
         node,
@@ -212,6 +219,8 @@ const controller = {
 
     const category = req.body.data;
     const pageNum = req.body.pageNum;
+
+    //TODO: Do not hardcode luzon as the location
     let location = "luzon";
     let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
 
@@ -225,6 +234,7 @@ const controller = {
     console.log(categories[category]);
     const sql = categories[category];
 
+    //TODO: if priority node fails, it should search on the central node
     const [result] = await connect.dbQuery(node, sql, []);
 
     const latestRecords = result.map((row) => ({
@@ -257,11 +267,13 @@ const controller = {
       undefined: "appt_main",
     };
 
+    // TODO: do not hardcode location
     // Determine which database node to use based on location
     let location = "luzon";
     const node =
       location === "luzon" ? connect.luzon_node : connect.vismin_node;
 
+    // TODO: also update the central node if node is not yet central
     const sql = `SELECT COUNT(*) as count FROM ${categories[category]};`;
     // Insert the appointment data into the database
     const insertResult = await connect.dbQuery(node, sql, []);
@@ -289,6 +301,7 @@ const controller = {
 
     let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
 
+    //TODO: also update central node if subnode is not yet central
     //update subnode
     try {
       // Update subnode
@@ -319,6 +332,7 @@ const controller = {
 
     let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
 
+    //TODO: search on central node if subnode fails
     //update subnode
     try {
       // Update subnode
@@ -360,6 +374,7 @@ const controller = {
 
     let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
 
+    //TODO: also update the central
     try {
       // Update subnode
       const result = await connect.dbQuery(
@@ -379,45 +394,4 @@ const controller = {
   },
 };
 
-function getCurrentDate() {
-  const now = new Date();
-  const year = now.getUTCFullYear();
-  const month = (now.getUTCMonth() + 1).toString().padStart(2, "0"); // Months are zero-indexed
-  const day = now.getUTCDate().toString().padStart(2, "0");
-  const formattedDate = `${year}-${month}-${day}T08:00:00.000Z`;
-  return formattedDate;
-}
-
 export default controller;
-
-///////////////// DRAFT //////////////////////////
-
-// import express from "express";
-// import bodyParser from "body-parser";
-// import mysql from "mysql2";
-// import connect from "../connect.js"
-// import "dotenv/config";
-
-// const LOCAL_DB_PASSWORD = process.env.LOCAL_DB_PASSWORD;
-
-// const app = express();
-// app.use(bodyParser.json());
-
-// //use function to check connections to 3 nodes
-// //checkConnections();
-
-// // use function to view 10 doctors
-// // viewDoctors()
-
-// const controller = {
-//   getHome: async function (req, res) {
-//     let connection = await conn.node_1.getConnection();
-//     res.render("home", {
-//       maincss: "/static/css/main.css",
-//       mainscript: "/static/js/home.js",
-//     });
-//   },
-
-// };
-
-// export default controller;
