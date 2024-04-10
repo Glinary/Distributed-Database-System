@@ -309,6 +309,49 @@ const controller = {
     });
   },
 
+  searchAppointment: async function (req, res) {
+    console.log("--- Searching appointment ---");
+    let location = "luzon"; //TODO: make a function to get if location if luzon or vismin
+    //TODO: change to req.body dynamic (hardcoded for now to test)
+    let body = req.body.json;
+    const { apptid } = JSON.parse(body);
+    console.log("apptid:", apptid);
+
+    let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
+
+    //update subnode
+    try {
+      // Update subnode
+      const [result] = await connect.dbQuery(
+        node,
+        `select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "TimeQueued",  DATE_FORMAT(TimeQueued, "%M %d, %Y") as "DateQueued", DATE_FORMAT(StartTime, "%l:%i %p") as "StartTime", DATE_FORMAT(EndTime, "%l:%i %p") as "EndTime", type as "Type", appt_main.virtual as "Virtual" FROM appt_main where apptid = ?;`,
+        [apptid]
+      );
+
+      if (result) {
+        console.log("Appointment successfully updated");
+        const appointments = result.map((row) => ({
+          pxid: row.pxid,
+          clinicid: row.clinicid,
+          doctorid: row.doctorid,
+          apptid: row.apptid,
+          status: row.status,
+          TimeQueued: row.TimeQueued,
+          QueueDate: row.DateQueued,
+          StartTime: row.StartTime,
+          EndTime: row.EndTime,
+          Type: row.Type,
+          Virtual: row.Virtual,
+        }));
+        console.log(appointments);
+        res.status(200).json({ appt: appointments });
+      }
+    } catch (err) {
+      console.log(err);
+      return res.status(500).send("Error: appointment was not updated");
+    }
+  },
+
   deleteAppointment: async function (req, res) {
     console.log("--- Deleting appointment ---");
     let location = "luzon"; //TODO: make a function to get if location if luzon or vismin

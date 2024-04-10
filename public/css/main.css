@@ -109,7 +109,9 @@ button {
 }
 
 #appt-delete,
-#appt-add {
+#appt-add,
+#appt-update,
+#appt-search {
   display: none;
 }
 

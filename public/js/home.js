@@ -9,6 +9,7 @@ let pageNum = 1;
 const itemSize = 20;
 let totalRows = 0;
 let currOperation = "read";
+let searchSucc = 0;
 
 categories = {
   doctors: "alldoctors",
@@ -32,12 +33,16 @@ function checkPage() {
   const patientAdd = document.getElementById("patient-add");
   const appAdd = document.getElementById("appt-add");
   const appDelete = document.getElementById("appt-delete");
+  const appSearch = document.getElementById("appt-search");
+  const appUpdate = document.getElementById("appt-update");
   const operation = document.querySelector(".operation");
 
   if (currOperation == "Add") {
     console.log("UNDEFINED");
     appAdd.style.display = "block";
     appDelete.style.display = "none";
+    appSearch.style.display = "none";
+    appUpdate.style.display = "none";
     operation.style.display = "flex";
     document.getElementById("opSelect").value = "Queued";
     setDefaultTime("StartTime");
@@ -47,12 +52,20 @@ function checkPage() {
   } else if (currOperation == "Delete") {
     console.log("HERE!");
     appAdd.style.display = "none";
+    appSearch.style.display = "none";
+    appUpdate.style.display = "none";
     appDelete.style.display = "block";
+    operation.style.display = "flex";
+  } else if (currOperation == "Update") {
+    appDelete.style.display = "none";
+    appAdd.style.display = "none";
+    appSearch.style.display = "block";
     operation.style.display = "flex";
   } else if (currOperation == "Read") {
     appDelete.style.display = "none";
     appAdd.style.display = "none";
     operation.style.display = "none";
+    appUpdate.style.display = "none";
   }
 }
 
@@ -213,6 +226,77 @@ async function deleteSubmit(event) {
     deleteForm.reset();
     onload();
   }
+}
+
+async function searchSubmit(event) {
+  event.preventDefault();
+
+  const searchForm = document.forms.searchForm;
+  const formData = new FormData(searchForm);
+
+  const data = {};
+  for (const entry of formData.entries()) {
+    data[entry[0]] = entry[1];
+  }
+
+  // Serialize the JS object into JSON string
+  const json = JSON.stringify(data);
+
+  body = { json: json };
+
+  const response = await fetch(`/searchAppointment`, {
+    method: "POST",
+    body: JSON.stringify(body),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (response.status == 200) {
+    console.log("SUCCESS");
+    const jsonMes = await response.json();
+    const appointment = jsonMes.appt;
+    searchSucc = 1;
+
+    console.log(appointment[0]);
+
+    console.log("value", document.getElementById("pxid").value);
+    changeValues(appointment);
+    checkPage();
+    // searchForm.reset();
+  }
+}
+
+function changeValues(appointment) {
+  console.log("Changing values with appointment:", appointment);
+
+  const appUpdate = document.getElementById("appt-update");
+  appUpdate.style.display = "block"; // Make sure the form is visible
+
+  // Set input values based on the retrieved appointment data
+  document.getElementById("pxid").value = appointment[0].pxid;
+  document.getElementById("clinicid").value = appointment[0].clinicid;
+  document.getElementById("doctorid").value = appointment[0].doctorid;
+  document.getElementById("opSelect").value = appointment[0].status;
+  document.getElementById("TimeQueued").value = appointment[0].TimeQueued;
+  document.getElementById("QueueDate").value = appointment[0].QueueDate;
+  document.getElementById("StartTime").value = appointment[0].StartTime;
+  document.getElementById("EndTime").value = appointment[0].EndTime;
+  document.getElementById("opSelect").selectedIndex = 0;
+  //   document.getElementById("virtual").value =
+  //     appointment[0].Virtual === 1 ? "1" : "0";
+
+  // Debugging: Log values after setting them
+  console.log("pxid value:", document.getElementById("pxid").value);
+  console.log("clinicid value:", document.getElementById("clinicid").value);
+  console.log("doctorid value:", document.getElementById("doctorid").value);
+  console.log("status value:", document.getElementById("opSelect").value);
+  console.log("TimeQueued value:", document.getElementById("TimeQueued").value);
+  console.log("QueueDate value:", document.getElementById("QueueDate").value);
+  console.log("StartTime value:", document.getElementById("StartTime").value);
+  console.log("EndTime value:", document.getElementById("EndTime").value);
+  console.log("type value:", document.getElementById("opSelect").value);
+  console.log("virtual value:", document.getElementById("virtual").value);
 }
 
 async function fetchNewlyAdded() {
