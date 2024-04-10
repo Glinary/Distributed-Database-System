@@ -92,6 +92,7 @@
 }
 
 button {
+  margin: 1rem 0rem;
   padding: 0.15rem;
   font-size: 0.85vw;
 }
@@ -107,7 +108,7 @@ button {
   display: none;
 }
 
-#patient-add,
+#appt-delete,
 #appt-add {
   display: none;
 }

@@ -31,22 +31,28 @@ function checkPage() {
   console.log("category: ", category);
   const patientAdd = document.getElementById("patient-add");
   const appAdd = document.getElementById("appt-add");
+  const appDelete = document.getElementById("appt-delete");
   const operation = document.querySelector(".operation");
 
   if (currOperation == "Add") {
-    if (category == "patients") {
-      patientAdd.style.display = "block";
-      operation.style.display = "flex";
-    } else if (category == undefined) {
-      console.log("UNDEFINED");
-      appAdd.style.display = "block";
-      operation.style.display = "flex";
-      document.getElementById("opSelect").value = "Queued";
-      setDefaultTime("StartTime");
-      setDefaultTime("TimeQueued");
-      setDefaultTime("EndTime");
-      setDefaultDate("QueueDate");
-    }
+    console.log("UNDEFINED");
+    appAdd.style.display = "block";
+    appDelete.style.display = "none";
+    operation.style.display = "flex";
+    document.getElementById("opSelect").value = "Queued";
+    setDefaultTime("StartTime");
+    setDefaultTime("TimeQueued");
+    setDefaultTime("EndTime");
+    setDefaultDate("QueueDate");
+  } else if (currOperation == "Delete") {
+    console.log("HERE!");
+    appAdd.style.display = "none";
+    appDelete.style.display = "block";
+    operation.style.display = "flex";
+  } else if (currOperation == "Read") {
+    appDelete.style.display = "none";
+    appAdd.style.display = "none";
+    operation.style.display = "none";
   }
 }
 
@@ -58,8 +64,10 @@ function setDefaultTime(timeVar) {
   var hours = now.getHours().toString().padStart(2, "0"); // Ensure two digits
   var minutes = now.getMinutes().toString().padStart(2, "0"); // Ensure two digits
 
-  // Set the value of the time input field to the current time
+  // Construct the current time string in 24-hour format (HH:mm)
   var currentTime = hours + ":" + minutes;
+
+  // Set the value of the specified time input field to the current time
   document.getElementById(timeVar).value = currentTime;
 }
 
@@ -93,7 +101,7 @@ async function checkCount() {
 
   if (responseCount.status == 200) {
     let rowsJson = await responseCount.json();
-    totalRows = rowsJson.rowsCount[0].count;
+    totalRows = rowsJson.rows[0][0].count;
   }
   console.log("DATAC: ", totalRows);
 }
@@ -135,9 +143,10 @@ async function addSubmit(event) {
 
   body = { category: category, json };
 
+  console.log("TO STORE");
   console.log(json);
 
-  const response = await fetch(`/addtodb`, {
+  const response = await fetch(`/postAppointment`, {
     method: "POST",
     body: JSON.stringify(body),
     headers: {
@@ -146,14 +155,16 @@ async function addSubmit(event) {
   });
 
   if (response.status == 200) {
+    console.log("SUCCESS");
     const jsonMes = await response.json();
     const message = jsonMes.message;
+
     Swal.fire({
       position: "center",
       icon: "success",
       title: message,
       showConfirmButton: false,
-      timer: 1500,
+      timer: 1800,
     });
     addForm.reset();
     fetchNewlyAdded();
