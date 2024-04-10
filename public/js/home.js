@@ -4,11 +4,13 @@ const category = pathSegments[0]; // This will be 'doctors' or 'clinic' based on
 const nextButton = document.getElementById("nextButton");
 const prevButton = document.getElementById("prevButton");
 const selectElement = document.getElementById("opSelect");
+const regElement = document.getElementById("regSelect");
 
 let pageNum = 1;
 const itemSize = 20;
 let totalRows = 0;
 let currOperation = "read";
+let region = "Central";
 let searchSucc = 0;
 
 categories = {
@@ -323,6 +325,31 @@ async function searchSubmit(event) {
       "Content-Type": "application/json",
     },
   });
+}
+
+async function gensearchSubmit(event) {
+  event.preventDefault();
+
+  const gensearchForm = document.forms.gensearchForm;
+  const formData = new FormData(gensearchForm);
+
+  const data = {};
+  for (const entry of formData.entries()) {
+    data[entry[0]] = entry[1];
+  }
+
+  // Serialize the JS object into JSON string
+  const json = JSON.stringify(data);
+
+  body = { json: json };
+
+  const response = await fetch(`/searchAppointment`, {
+    method: "POST",
+    body: JSON.stringify(body),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
 
   if (response.status == 200) {
     console.log("SUCCESS");
@@ -433,6 +460,13 @@ async function fetchNewlyAdded() {
 selectElement.addEventListener("change", (event) => {
   currOperation = event.target.value;
   console.log(currOperation);
+  onload();
+});
+
+// Event listener for 'change' event on the select element
+regElement.addEventListener("change", (event) => {
+  region = event.target.value;
+  console.log("Region: ", region);
   onload();
 });
 

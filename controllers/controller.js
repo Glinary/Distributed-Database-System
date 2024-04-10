@@ -38,8 +38,6 @@ const controller = {
   },
 
   getAllData: async function (req, res) {
-    console.log("---HERE---");
-
     const category = req.body.data;
     const pageNum = req.body.pageNum;
 
@@ -56,9 +54,6 @@ const controller = {
                       DATE_FORMAT(EndTime, "%l:%i %p") AS "End Time",
                       type AS "Type", appt_main.virtual AS "Virtual"
                FROM appt_main LIMIT 15 OFFSET ${(pageNum - 1) * 15};`,
-      // alldata: `SELECT pxid, clinicid, doctorid, apptid, status, TimeQueued, QueueDate, StartTime, EndTime, type AS "Type", appt_main.virtual as "Virtual" FROM appt_main LIMIT 15 OFFSET ${
-      //   (pageNum - 1) * 15
-      // };`,
     };
 
     async function connectionReRoute() {

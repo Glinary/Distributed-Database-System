@@ -82,6 +82,13 @@
   }
 }
 
+.head {
+  display: flex;
+  height: auto;
+  justify-content: space-evenly;
+  align-items: center;
+}
+
 .button-wrapper {
   display: flex;
   justify-content: center;
@@ -123,11 +130,16 @@ form {
   align-items: center;
 }
 
+#gensearchForm {
+  flex-direction: row;
+  align-items: start;
+}
+
 .elements {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* Three columns with equal width */
+  grid-template-columns: repeat(2, 1fr);
   grid-template-rows: 2rem 1fr;
-  gap: 1rem; /* Spacing between grid items */
+  gap: 1rem;
 }
 
 input,
@@ -136,10 +148,12 @@ option {
   font-size: 1.15vw;
 }
 
-/* label {
-  margin: 1rem;
-} */
-
 input[type="number"] {
   width: 2rem;
+}
+
+.head button {
+  margin: 0rem 0.5rem;
+  padding: 0.15rem;
+  font-size: 0.85vw;
 }
