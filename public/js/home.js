@@ -10,7 +10,7 @@ let pageNum = 1;
 const itemSize = 20;
 let totalRows = 0;
 let currOperation = "read";
-let region = "Central";
+let region = "central";
 let searchSucc = 0;
 
 categories = {
@@ -105,6 +105,7 @@ function setDefaultDate(dateVar) {
 async function checkCount() {
   body = {
     category: category,
+    region: region,
   };
   const responseCount = await fetch(`/dataCount`, {
     method: "POST",
@@ -326,6 +327,19 @@ async function searchSubmit(event) {
       "Content-Type": "application/json",
     },
   });
+
+  if (response.status == 200) {
+    console.log("SUCCESS");
+    const jsonMes = await response.json();
+    const appointment = jsonMes.appt;
+    searchSucc = 1;
+
+    console.log(appointment[0]);
+
+    changeValues(appointment);
+    checkPage();
+    searchForm.reset();
+  }
 }
 
 async function gensearchSubmit(event) {
@@ -341,8 +355,9 @@ async function gensearchSubmit(event) {
 
   // Serialize the JS object into JSON string
   const json = JSON.stringify(data);
+  console.log(json);
 
-  body = { json: json };
+  body = { json: json, region: region };
 
   const response = await fetch(`/searchAppointment`, {
     method: "POST",
@@ -356,14 +371,11 @@ async function gensearchSubmit(event) {
     console.log("SUCCESS");
     const jsonMes = await response.json();
     const appointment = jsonMes.appt;
-    searchSucc = 1;
+    table = [appointment[0]];
 
-    console.log(appointment[0]);
-
-    console.log("value", document.getElementById("pxid").value);
-    changeValues(appointment);
-    checkPage();
+    console.log(table);
     searchForm.reset();
+    createTable(table);
   }
 }
 
@@ -439,6 +451,7 @@ async function fetchNewlyAdded() {
   body = {
     data: categories[category],
     pageNum: pageNum,
+    region: region,
   };
 
   const response = await fetch(`/allNewData`, {
