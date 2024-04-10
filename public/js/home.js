@@ -9,6 +9,7 @@ let pageNum = 1;
 const itemSize = 20;
 let totalRows = 0;
 let currOperation = "read";
+let searchSucc = 0;
 
 categories = {
   doctors: "alldoctors",
@@ -31,22 +32,40 @@ function checkPage() {
   console.log("category: ", category);
   const patientAdd = document.getElementById("patient-add");
   const appAdd = document.getElementById("appt-add");
+  const appDelete = document.getElementById("appt-delete");
+  const appSearch = document.getElementById("appt-search");
+  const appUpdate = document.getElementById("appt-update");
   const operation = document.querySelector(".operation");
 
   if (currOperation == "Add") {
-    if (category == "patients") {
-      patientAdd.style.display = "block";
-      operation.style.display = "flex";
-    } else if (category == undefined) {
-      console.log("UNDEFINED");
-      appAdd.style.display = "block";
-      operation.style.display = "flex";
-      document.getElementById("opSelect").value = "Queued";
-      setDefaultTime("StartTime");
-      setDefaultTime("TimeQueued");
-      setDefaultTime("EndTime");
-      setDefaultDate("QueueDate");
-    }
+    console.log("UNDEFINED");
+    appAdd.style.display = "block";
+    appDelete.style.display = "none";
+    appSearch.style.display = "none";
+    appUpdate.style.display = "none";
+    operation.style.display = "flex";
+    document.getElementById("opSelect").value = "Queued";
+    setDefaultTime("StartTime");
+    setDefaultTime("TimeQueued");
+    setDefaultTime("EndTime");
+    setDefaultDate("QueueDate");
+  } else if (currOperation == "Delete") {
+    console.log("HERE!");
+    appAdd.style.display = "none";
+    appSearch.style.display = "none";
+    appUpdate.style.display = "none";
+    appDelete.style.display = "block";
+    operation.style.display = "flex";
+  } else if (currOperation == "Update") {
+    appDelete.style.display = "none";
+    appAdd.style.display = "none";
+    appSearch.style.display = "block";
+    operation.style.display = "flex";
+  } else if (currOperation == "Read") {
+    appDelete.style.display = "none";
+    appAdd.style.display = "none";
+    operation.style.display = "none";
+    appUpdate.style.display = "none";
   }
 }
 
@@ -58,8 +77,10 @@ function setDefaultTime(timeVar) {
   var hours = now.getHours().toString().padStart(2, "0"); // Ensure two digits
   var minutes = now.getMinutes().toString().padStart(2, "0"); // Ensure two digits
 
-  // Set the value of the time input field to the current time
+  // Construct the current time string in 24-hour format (HH:mm)
   var currentTime = hours + ":" + minutes;
+
+  // Set the value of the specified time input field to the current time
   document.getElementById(timeVar).value = currentTime;
 }
 
@@ -93,7 +114,7 @@ async function checkCount() {
 
   if (responseCount.status == 200) {
     let rowsJson = await responseCount.json();
-    totalRows = rowsJson.rowsCount[0].count;
+    totalRows = rowsJson.rows[0][0].count;
   }
   console.log("DATAC: ", totalRows);
 }
@@ -135,9 +156,10 @@ async function addSubmit(event) {
 
   body = { category: category, json };
 
+  console.log("TO STORE");
   console.log(json);
 
-  const response = await fetch(`/addtodb`, {
+  const response = await fetch(`/postAppointment`, {
     method: "POST",
     body: JSON.stringify(body),
     headers: {
@@ -146,18 +168,185 @@ async function addSubmit(event) {
   });
 
   if (response.status == 200) {
+    console.log("SUCCESS");
     const jsonMes = await response.json();
     const message = jsonMes.message;
+
     Swal.fire({
       position: "center",
       icon: "success",
       title: message,
       showConfirmButton: false,
-      timer: 1500,
+      timer: 1800,
     });
     addForm.reset();
     fetchNewlyAdded();
   }
+}
+
+async function deleteSubmit(event) {
+  event.preventDefault();
+
+  const deleteForm = document.forms.deleteForm;
+  const formData = new FormData(deleteForm);
+
+  const data = {};
+  for (const entry of formData.entries()) {
+    data[entry[0]] = entry[1];
+  }
+
+  // Serialize the JS object into JSON string
+  const json = JSON.stringify(data);
+
+  body = { category: category, json };
+
+  console.log("TO STORE");
+  console.log(json);
+
+  const response = await fetch(`/deleteAppointment`, {
+    method: "POST",
+    body: JSON.stringify(body),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (response.status == 200) {
+    console.log("SUCCESS");
+    const jsonMes = await response.json();
+    const message = jsonMes.message;
+
+    Swal.fire({
+      position: "center",
+      icon: "success",
+      title: message,
+      showConfirmButton: false,
+      timer: 1800,
+    });
+    deleteForm.reset();
+    onload();
+  }
+}
+
+async function searchSubmit(event) {
+  event.preventDefault();
+
+  const searchForm = document.forms.searchForm;
+  const formData = new FormData(searchForm);
+
+  const data = {};
+  for (const entry of formData.entries()) {
+    data[entry[0]] = entry[1];
+  }
+
+  // Serialize the JS object into JSON string
+  const json = JSON.stringify(data);
+
+  body = { json: json };
+
+  const response = await fetch(`/searchAppointment`, {
+    method: "POST",
+    body: JSON.stringify(body),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (response.status == 200) {
+    console.log("SUCCESS");
+    const jsonMes = await response.json();
+    const appointment = jsonMes.appt;
+    searchSucc = 1;
+
+    console.log(appointment[0]);
+
+    console.log("value", document.getElementById("pxid").value);
+    changeValues(appointment);
+    checkPage();
+    // searchForm.reset();
+  }
+}
+
+function changeValues(appointment) {
+  console.log("Changing values with appointment:", appointment);
+
+  const appUpdate = document.getElementById("appt-update");
+  appUpdate.style.display = "block"; // Make sure the form is visible
+
+  virCateg = { 1: 0, 0: 1 };
+  selCateg = { Consultation: 0, Inpatient: 1 };
+
+  // Set input values based on the retrieved appointment data
+  document.getElementById("pxidU").value = appointment[0].pxid;
+  document.getElementById("clinicidU").value = appointment[0].clinicid;
+  document.getElementById("doctoridU").value = appointment[0].doctorid;
+  document.getElementById("opSelectU").value = appointment[0].status;
+  document.getElementById("TimeQueuedU").value = setTime(
+    appointment[0].TimeQueued
+  );
+  document.getElementById("QueueDateU").value = setDate(
+    appointment[0].QueueDate
+  );
+  document.getElementById("StartTimeU").value = setTime(
+    appointment[0].StartTime
+  );
+  document.getElementById("EndTimeU").value = setTime(appointment[0].EndTime);
+  document.getElementById("updateSelect").selectedIndex =
+    selCateg[appointment[0].Type];
+  document.getElementById("virSelect").value = virCateg[appointment[0].Virtual];
+
+  // Debugging: Log values after setting them
+  console.log("pxid value:", document.getElementById("pxidU").value);
+  console.log("clinicid value:", document.getElementById("clinicidU").value);
+  console.log("doctorid value:", document.getElementById("doctoridU").value);
+  console.log("status value:", document.getElementById("opSelectU").value);
+  console.log(
+    "TimeQueued value:",
+    document.getElementById("TimeQueuedU").value
+  );
+  console.log("QueueDate value:", document.getElementById("QueueDateU").value);
+  console.log("StartTime value:", document.getElementById("StartTimeU").value);
+  console.log("EndTime value:", document.getElementById("EndTimeU").value);
+  console.log("type value:", document.getElementById("updateSelect").value);
+  console.log("virtual value:", document.getElementById("virSelect").value);
+}
+
+function setDate(dateString) {
+  // Parse the input date string to create a Date object
+  const dateObject = new Date(dateString);
+
+  // Get the year, month, and day components from the Date object
+  const year = dateObject.getFullYear();
+  const month = (dateObject.getMonth() + 1).toString().padStart(2, "0"); // Months are zero-indexed
+  const day = dateObject.getDate().toString().padStart(2, "0");
+
+  // Construct the date string in "YYYY-MM-DD" format
+  const formattedDate = `${year}-${month}-${day}`;
+
+  return formattedDate;
+}
+
+function setTime(timeString) {
+  // Parse the input time string (e.g., "10:30 AM") to extract hours and minutes
+  const timeComponents = timeString.split(":");
+  let hours = parseInt(timeComponents[0]);
+  const minutes = timeComponents[1].split(" ")[0]; // Extract minutes without AM/PM
+
+  // Adjust hours for PM times (assuming 12-hour format)
+  if (timeString.includes("PM") && hours < 12) {
+    hours += 12;
+  } else if (timeString.includes("AM") && hours === 12) {
+    hours = 0; // Midnight (12:xx AM) should be 0:xx in 24-hour format
+  }
+
+  // Format hours and minutes as two-digit strings
+  const formattedHours = hours.toString().padStart(2, "0");
+  const formattedMinutes = minutes.padStart(2, "0");
+
+  // Construct the time string in "HH:mm" (24-hour) format
+  const formattedTime = `${formattedHours}:${formattedMinutes}`;
+
+  return formattedTime;
 }
 
 async function fetchNewlyAdded() {

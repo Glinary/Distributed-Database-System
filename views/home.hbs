@@ -23,7 +23,7 @@
     </div>
 
     <div class="operation">
-        <div class="add-op" id="patient-add">
+        {{!-- <div class="add-op" id="patient-add">
              <form id="addForm">
                 <div class="elements">
                     <div class="opt">
@@ -41,7 +41,7 @@
                 </div>
                 <button type="submit" onclick="addSubmit(event)">Submit</button>
             </form>
-        </div>
+        </div> --}}
         
         <div class="add-op" id="appt-add">
              <form id="addFormMain">
@@ -101,6 +101,89 @@
                     </div>
                 </div>
                 <button type="submit" onclick="addSubmit(event)">Submit</button>
+            </form>
+        </div>
+
+        <div class="add-op" id="appt-delete">
+             <form id="deleteForm">
+                <div class="elements">
+                    <div class="opt">
+                        <label for="apptid">apptid</label>
+                        <input type="text" id="apptid" name="apptid" required>
+                    </div>
+                </div>
+                <button type="submit" onclick="deleteSubmit(event)">Submit</button>
+            </form>
+        </div>
+        <div class="add-op" id="appt-search">
+             <form id="searchForm">
+                <div class="elements">
+                    <div class="opt">
+                        <label for="apptid">apptid search</label>
+                        <input type="text" id="apptid" name="apptid" required>
+                    </div>
+                </div>
+                <button type="submit" onclick="searchSubmit(event)">Submit</button>
+            </form>
+        </div>
+        <div class="add-op" id="appt-update">
+             <form id="updateForm">
+                <div class="elements">
+                    <div class="opt">
+                        <label for="pxid">pxid</label>
+                        <input type="text" id="pxidU" name="pxid" required>
+                    </div>
+                    <div class="opt">
+                        <label for="clinicid">clinicid</label>
+                        <input type="text" id="clinicidU" name="clinicid"required>
+                    </div>
+                    <div class="opt">
+                        <label for="doctorid">doctorid</label>
+                        <input type="text" id="doctoridU" name="doctorid"required>
+                    </div>
+                    <div class="opt">
+                        <label for="status">Status</label>
+                        <select id="opSelectU" name="status">
+                            <option value="Complete">Complete</option>
+                            <option value="Queued" selected>Queued</option>
+                            <option value="No Show">NoShow</option>
+                            <option value="Serving">Serving</option>
+                            <option value="Cancel">Cancel</option>
+                            <option value="Admitted">Admitted</option>
+                        </select>
+                    </div>
+                    <div class="opt">
+                        <label for="timeQueued">Time Queued</label>
+                        <input type="time" id="TimeQueuedU" name="TimeQueued" min="1:00" max="12:00" required />
+                    </div>
+                    <div class="opt">
+                        <label for="dateQueued">Date Queued</label>
+                        <input  type="date" id="QueueDateU" name="QueueDate" required />
+                    </div>
+                    <div class="opt">
+                        <label for="startTime">Start Time</label>
+                        <input type="time" id="StartTimeU" name="StartTime" min="1:00" max="12:00"  required />
+                    </div>
+                    <div class="opt">
+                        <label for="endTime">End Time</label>
+                        <input type="time" id="EndTimeU" name="EndTime" min="1:00" max="12:00" required />
+                    </div>
+                    <div class="opt">
+                        <label for="type">Type</label>
+                        <select id="updateSelect" name="type">
+                            <option value="Consultation">Consultation</option>
+                            <option value="Inpatient">Inpatient</option>
+                        </select>
+                    </div>
+                    <div class="opt">
+                        <label for="virtual">Virtual</label>
+                        <select id="virSelect" name="virtual">
+                            <option value="1">Yes</option>
+                            <option value="0">No</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" onclick="searchSubmit(event)">Submit</button>
             </form>
         </div>
     </div>
