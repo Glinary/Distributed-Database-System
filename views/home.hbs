@@ -1,10 +1,26 @@
 <section class="home">
-    <select id="opSelect">
-        <option value="Read">Read</option>
-        <option value="Add">Add</option>
-        <option value="Delete">Delete</option>
-        <option value="Update">Update</option>
-    </select>
+    <div class="head">
+
+        <select id="opSelect">
+            <option value="Read">Read</option>
+            <option value="Add">Add</option>
+            <option value="Delete">Delete</option>
+            <option value="Update">Update</option>
+        </select>
+        <div id="appt-gensearch">
+            <form id="gensearchForm">
+                    <label for="apptid">apptid</label>
+                    <input type="text" id="apptid" name="apptid" required>
+                <button type="submit" onclick="gensearchSubmit(event)">Submit</button>
+            </form>
+        </div>
+        <select id="regSelect">
+            <option value="central">All</option>
+            <option value="luzon">Luzon</option>
+            <option value="vismin">Visayas/Mindanao</option>
+        </select>
+
+    </div>
 
     <div id="table-container"></div>
     <div class="button-wrapper">

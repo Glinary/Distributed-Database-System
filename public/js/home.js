@@ -4,11 +4,13 @@ const category = pathSegments[0]; // This will be 'doctors' or 'clinic' based on
 const nextButton = document.getElementById("nextButton");
 const prevButton = document.getElementById("prevButton");
 const selectElement = document.getElementById("opSelect");
+const regElement = document.getElementById("regSelect");
 
 let pageNum = 1;
 const itemSize = 20;
 let totalRows = 0;
 let currOperation = "read";
+let region = "central";
 let searchSucc = 0;
 
 categories = {
@@ -103,6 +105,7 @@ function setDefaultDate(dateVar) {
 async function checkCount() {
   body = {
     category: category,
+    region: region,
   };
   const responseCount = await fetch(`/dataCount`, {
     method: "POST",
@@ -123,6 +126,7 @@ async function fetchData() {
   body = {
     data: categories[category],
     pageNum: pageNum,
+    region: region,
   };
 
   const response = await fetch(`/alldata`, {
@@ -332,10 +336,46 @@ async function searchSubmit(event) {
 
     console.log(appointment[0]);
 
-    console.log("value", document.getElementById("pxid").value);
     changeValues(appointment);
     checkPage();
     searchForm.reset();
+  }
+}
+
+async function gensearchSubmit(event) {
+  event.preventDefault();
+
+  const gensearchForm = document.forms.gensearchForm;
+  const formData = new FormData(gensearchForm);
+
+  const data = {};
+  for (const entry of formData.entries()) {
+    data[entry[0]] = entry[1];
+  }
+
+  // Serialize the JS object into JSON string
+  const json = JSON.stringify(data);
+  console.log(json);
+
+  body = { json: json, region: region };
+
+  const response = await fetch(`/searchAppointment`, {
+    method: "POST",
+    body: JSON.stringify(body),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (response.status == 200) {
+    console.log("SUCCESS");
+    const jsonMes = await response.json();
+    const appointment = jsonMes.appt;
+    table = [appointment[0]];
+
+    console.log(table);
+    searchForm.reset();
+    createTable(table);
   }
 }
 
@@ -411,6 +451,7 @@ async function fetchNewlyAdded() {
   body = {
     data: categories[category],
     pageNum: pageNum,
+    region: region,
   };
 
   const response = await fetch(`/allNewData`, {
@@ -433,6 +474,13 @@ async function fetchNewlyAdded() {
 selectElement.addEventListener("change", (event) => {
   currOperation = event.target.value;
   console.log(currOperation);
+  onload();
+});
+
+// Event listener for 'change' event on the select element
+regElement.addEventListener("change", (event) => {
+  region = event.target.value;
+  console.log("Region: ", region);
   onload();
 });
 
