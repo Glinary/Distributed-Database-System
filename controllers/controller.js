@@ -194,7 +194,22 @@ const controller = {
         );
         if (master_insertResult) {
           console.log("Appointment successfully added");
-          res.status(200).json({ message: "Appointment successfully added"});
+          //insert the appointment data into slave node if central is successful
+          try {
+            const insertResult = await connect.dbQuery(
+              node,
+              `INSERT INTO appt_main SET ?`,
+              apptData
+            );
+            if (insertResult) {
+              console.log("Appointment successfully added");
+              res.status(200).json({ message: "Successful adding of appointment" });
+            }
+          } catch (err) {
+            console.error("Error adding appointment:", err);
+            res.status(500).json({ message: "Failed to add appointment" });
+          }
+
         } else {
           throw new Error("Failed to add appointment");
         }
@@ -203,19 +218,6 @@ const controller = {
         res.status(500).json({ message: "Failed to add appointment" });
       }
 
-      // Insert the appointment data into the slave node
-      const insertResult = await connect.dbQuery(
-        node,
-        `INSERT INTO appt_main SET ?`,
-        apptData
-      );
-
-      if (insertResult) {
-        console.log("Successful adding of appointment");
-        res.status(200).json({ message: "Successful adding of appointment" });
-      } else {
-        throw new Error("Failed to add appointment");
-      }
     } catch (error) {
       console.error("Error adding appointment:", error);
       res.status(500).json({ message: "Failed to add appointment" });
@@ -369,7 +371,11 @@ const controller = {
             node,
             `UPDATE appt_main SET status = ?, TimeQueued = ?, QueueDate = ?, StartTime = ?, EndTime = ?, type = ?, appt_main.Virtual = ? WHERE apptid = ?`,
             apptData
-          )
+          );
+          if (result) {
+            console.log("Appointment successfully updated");
+            res.status(200).json({ message: "Appointment successfully updated" });
+          }
         } catch (err) {
           console.log(err);
           return res.status(500).send("Error: appointment was not updated");
@@ -477,29 +483,30 @@ const controller = {
 
       if (master_result) {
         console.log("Appointment successfully deleted");
-        res.status(200).json({ message: "Appointment successfully deleted" });
+        
+        try {
+          // Update subnode
+          const result = await connect.dbQuery(
+            node,
+            "DELETE FROM appt_main WHERE apptid = ?",
+            apptid
+          );
+    
+          if (result) {
+            console.log("Appointment successfully deleted");
+            res.status(200).json({ message: "Appointment successfully deleted" });
+          }
+        } catch (err) {
+          console.log(err);
+          return res.status(500).send("Error: appointment was not deleted");
+        }
       }
     } catch (err) {
       console.log(err);
       return res.status(500).send("Error: appointment was not deleted");
     }
 
-    try {
-      // Update subnode
-      const result = await connect.dbQuery(
-        node,
-        "DELETE FROM appt_main WHERE apptid = ?",
-        apptid
-      );
-
-      if (result) {
-        console.log("Appointment successfully deleted");
-        res.status(200).json({ message: "Appointment successfully deleted" });
-      }
-    } catch (err) {
-      console.log(err);
-      return res.status(500).send("Error: appointment was not deleted");
-    }
+    
   },
 };
 
