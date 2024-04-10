@@ -282,9 +282,6 @@ const controller = {
 
     const jsonData = req.body.json;
     const {
-      pxid,
-      clinicid,
-      doctorid,
       apptid,
       status,
       TimeQueued,
