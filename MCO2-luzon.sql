@@ -74,17 +74,17 @@ CREATE TABLE IF NOT EXISTS `stadvdbmco2luzon`.`appt_main` (
   INDEX `clinics_idx` (`clinicid` ASC) VISIBLE,
   CONSTRAINT `doctors`
     FOREIGN KEY (`doctorid`)
-    REFERENCES `stadvdbmco1`.`doctors` (`doctorid`)
+    REFERENCES `stadvdbmco2luzon`.`doctors` (`doctorid`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `px`
     FOREIGN KEY (`pxid`)
-    REFERENCES `stadvdbmco1`.`px` (`pxid`)
+    REFERENCES `stadvdbmco2luzon`.`px` (`pxid`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `clinics`
     FOREIGN KEY (`clinicid`)
-    REFERENCES `stadvdbmco1`.`clinics` (`clinicid`)
+    REFERENCES `stadvdbmco2luzon`.`clinics` (`clinicid`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
