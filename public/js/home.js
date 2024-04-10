@@ -158,7 +158,7 @@ async function addSubmit(event) {
   // Serialize the JS object into JSON string
   const json = JSON.stringify(data);
 
-  body = { category: category, json };
+  body = { category: category, json, region: region };
 
   console.log("TO STORE");
   console.log(json);
@@ -202,7 +202,7 @@ async function deleteSubmit(event) {
   // Serialize the JS object into JSON string
   const json = JSON.stringify(data);
 
-  body = { category: category, json };
+  body = { category: category, json, region: region };
 
   console.log("TO STORE");
   console.log(json);
@@ -246,7 +246,7 @@ async function updateSubmit(event) {
   // Serialize the JS object into JSON string
   const json = JSON.stringify(data);
 
-  body = { json: json };
+  body = { json: json, region: region };
 
   console.log("TO update");
   console.log(json);

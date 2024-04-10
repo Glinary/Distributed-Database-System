@@ -53,7 +53,7 @@ const controller = {
     //Search on the chosen node first before querying on central node, then fail if none
     async function connectionReRoute(node_num) {
       let connection;
-      switch(node_num) {
+      switch (node_num) {
         case 2: //user chose luzon region
           try {
             connection = connect.luzon_node.getConnection();
@@ -78,7 +78,7 @@ const controller = {
               node = connect.central_node;
             } catch (err) {
               console.log(err);
-              res.status(500).send("Error retrieving data from database"); 
+              res.status(500).send("Error retrieving data from database");
             }
           }
           break;
@@ -118,11 +118,7 @@ const controller = {
 
   postAppointment: async (req, res) => {
     try {
-      //TODO: make a function to get location of where user wants to add
-      /*
-       * NOTE: if writing, always to master node.
-       */
-      const location = "luzon";
+      const location = req.body.region;
 
       const jsonData = req.body.json;
       const {
@@ -203,13 +199,14 @@ const controller = {
             );
             if (insertResult) {
               console.log("Appointment successfully added");
-              res.status(200).json({ message: "Successful adding of appointment" });
+              res
+                .status(200)
+                .json({ message: "Successful adding of appointment" });
             }
           } catch (err) {
             console.error("Error adding appointment:", err);
             res.status(500).json({ message: "Failed to add appointment" });
           }
-
         } else {
           throw new Error("Failed to add appointment");
         }
@@ -217,7 +214,6 @@ const controller = {
         console.error("Error adding appointment:", error);
         res.status(500).json({ message: "Failed to add appointment" });
       }
-
     } catch (error) {
       console.error("Error adding appointment:", error);
       res.status(500).json({ message: "Failed to add appointment" });
@@ -226,12 +222,8 @@ const controller = {
 
   getAllNewData: async function (req, res) {
     console.log("---HERE ALL NEW DATA---");
-    const region = req.body.region;
+    const location = req.body.region;
 
-    //TODO: Do not hardcode luzon as the location
-    //TODO: Delete later
-    // let location = region;
-    let location = "luzon";
     let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
 
     const sql = `select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "TimeQueued",  DATE_FORMAT(QueueDate, "%M %d, %Y") as "DateQueued", DATE_FORMAT(StartTime, "%l:%i %p") as "StartTime", DATE_FORMAT(EndTime, "%l:%i %p") as "EndTime", type as "Type", appt_main.virtual as "Virtual" FROM appt_main ORDER BY apptid DESC LIMIT 5;`;
@@ -239,7 +231,11 @@ const controller = {
     //TODO: check if priority node fails, it should connect on the central node
     const [result] = await connect.dbQuery(node, sql, []);
     if (isEmptyArray([result])) {
-      const [master_result] = await connect.dbQuery(connect.central_node, sql, []);
+      const [master_result] = await connect.dbQuery(
+        connect.central_node,
+        sql,
+        []
+      );
 
       const master_latestRecords = master_result.map((row) => ({
         pxid: row.pxid,
@@ -279,7 +275,7 @@ const controller = {
 
   getDataCount: async function (req, res) {
     const category = req.body.category;
-    const region = req.body.region;
+    const location = req.body.region;
 
     const categories = {
       doctors: "doctors",
@@ -288,21 +284,19 @@ const controller = {
       undefined: "appt_main",
     };
 
-    // TODO: do not hardcode location
-    // Determine which database node to use based on location
-    let location = "luzon";
-    //TODO: Delete this ^ later
-    // let location = region;
-
     const node =
       location === "luzon" ? connect.luzon_node : connect.vismin_node;
 
     const sql = `SELECT COUNT(*) as count FROM ${categories[category]};`;
     // update central node
-    const master_insertResult = await connect.dbQuery(connect.central_node, sql, []);
+    const master_insertResult = await connect.dbQuery(
+      connect.central_node,
+      sql,
+      []
+    );
     if (master_insertResult) {
       console.log("INSERT: ", master_insertResult[0][0].count);
-      
+
       // Insert the appointment data into the database
       const insertResult = await connect.dbQuery(node, sql, []);
 
@@ -311,7 +305,6 @@ const controller = {
         res.status(200).json({ rows: insertResult }).send();
       }
     }
-    
   },
 
   getDoctors: async function (req, res) {
@@ -324,7 +317,7 @@ const controller = {
 
   editAppointment: async function (req, res) {
     console.log("--- Editing appointment ---");
-    let location = "luzon"; //TODO: make a function to get if location if luzon or vismin
+    let location = req.body.region;
 
     const jsonData = req.body.json;
     const {
@@ -357,9 +350,10 @@ const controller = {
     ];
     // update central node first
     try {
-      const master_result = await connect.dbQuery(connect.central_node,
-      `UPDATE appt_main SET status = ?, TimeQueued = ?, QueueDate = ?, StartTime = ?, EndTime = ?, type = ?, appt_main.Virtual = ? WHERE apptid = ?`,
-      apptData
+      const master_result = await connect.dbQuery(
+        connect.central_node,
+        `UPDATE appt_main SET status = ?, TimeQueued = ?, QueueDate = ?, StartTime = ?, EndTime = ?, type = ?, appt_main.Virtual = ? WHERE apptid = ?`,
+        apptData
       );
 
       if (master_result) {
@@ -374,7 +368,9 @@ const controller = {
           );
           if (result) {
             console.log("Appointment successfully updated");
-            res.status(200).json({ message: "Appointment successfully updated" });
+            res
+              .status(200)
+              .json({ message: "Appointment successfully updated" });
           }
         } catch (err) {
           console.log(err);
@@ -390,8 +386,7 @@ const controller = {
   searchAppointment: async function (req, res) {
     console.log("--- Searching appointment ---");
 
-    let region = req.body.region;
-    let location = region;
+    const location = req.body.region;
 
     let body = req.body.json;
     const { apptid } = JSON.parse(body);
@@ -414,7 +409,7 @@ const controller = {
           connect.central_node,
           `select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "TimeQueued",  DATE_FORMAT(QueueDate, "%M %d, %Y") as "DateQueued", DATE_FORMAT(StartTime, "%l:%i %p") as "StartTime", DATE_FORMAT(EndTime, "%l:%i %p") as "EndTime", type as "Type", appt_main.virtual as "Virtual" FROM appt_main where apptid = ?;`,
           [apptid]
-        )
+        );
         //transfer to central since subnode failed
         if (master_result) {
           console.log("Appointment successfully updated");
@@ -434,8 +429,8 @@ const controller = {
           console.log(appointments);
           res.status(200).json({ appt: master_appointments });
         }
-      };
-  
+      }
+
       if (result) {
         console.log("Appointment searched succesfully");
         const appointments = result.map((row) => ({
@@ -462,11 +457,8 @@ const controller = {
 
   deleteAppointment: async function (req, res) {
     console.log("--- Deleting appointment ---");
-    //TODO: make a function to get if location if luzon or vismin
-    /*
-     * NOTE: if writing/deleting, always sa master
-     */
-    let location = "luzon";
+
+    let location = req.body.region;
 
     const apptids = req.body.json;
     const { apptid } = JSON.parse(apptids);
@@ -483,7 +475,7 @@ const controller = {
 
       if (master_result) {
         console.log("Appointment successfully deleted");
-        
+
         try {
           // Update subnode
           const result = await connect.dbQuery(
@@ -491,10 +483,12 @@ const controller = {
             "DELETE FROM appt_main WHERE apptid = ?",
             apptid
           );
-    
+
           if (result) {
             console.log("Appointment successfully deleted");
-            res.status(200).json({ message: "Appointment successfully deleted" });
+            res
+              .status(200)
+              .json({ message: "Appointment successfully deleted" });
           }
         } catch (err) {
           console.log(err);
@@ -505,8 +499,6 @@ const controller = {
       console.log(err);
       return res.status(500).send("Error: appointment was not deleted");
     }
-
-    
   },
 };
 
