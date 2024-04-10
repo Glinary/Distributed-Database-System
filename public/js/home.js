@@ -5,6 +5,7 @@ const nextButton = document.getElementById("nextButton");
 const prevButton = document.getElementById("prevButton");
 const selectElement = document.getElementById("opSelect");
 const regElement = document.getElementById("regSelect");
+const crud = document.querySelector(".hide");
 
 let pageNum = 1;
 const itemSize = 20;
@@ -68,6 +69,10 @@ function checkPage() {
     appAdd.style.display = "none";
     operation.style.display = "none";
     appUpdate.style.display = "none";
+  }
+
+  if (category != undefined) {
+    crud.style.display = "none";
   }
 }
 
