@@ -137,14 +137,10 @@ const controller = {
         virtual,
       } = JSON.parse(jsonData);
 
-      console.log(TimeQueued);
-
       // Format date and time values
       const formattedTimeQueued = formattedDatetime(TimeQueued);
       const formattedStartTime = formattedDatetime(StartTime);
       const formattedEndTime = formattedDatetime(EndTime);
-
-      console.log(formattedTimeQueued);
 
       // Determine which database node to use based on location
       const node =
@@ -155,9 +151,8 @@ const controller = {
 
       // Retrieve the last inserted ID from the appt_main table
       const result1 = await connect.dbQuery(node, sqlLastId, []);
-      console.log("the res: ", result1[0][0].keyid);
-
       let nextID;
+
       if (result1 && result1.length > 0) {
         const lastID = result1[0][0].keyid;
         // Convert the lastID from hexadecimal to a BigInt value
@@ -228,7 +223,7 @@ const controller = {
       alldoctors: `select doctorid, mainspecialty as "Main Specialty", age from doctors ORDER BY doctorid DESC LIMIT 5;`,
       allclinic: `select * from clinics ORDER BY clinicid DESC LIMIT 5;`,
       allpatients: `SELECT pxid, age, gender FROM px ORDER BY pxid DESC LIMIT 5;`,
-      alldata: `select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "TimeQueued",  DATE_FORMAT(TimeQueued, "%M %d, %Y") as "DateQueued", DATE_FORMAT(StartTime, "%l:%i %p") as "StartTime", DATE_FORMAT(EndTime, "%l:%i %p") as "EndTime", type as "Type", appt_main.virtual as "Virtual" FROM appt_main ORDER BY apptid DESC LIMIT 5;`,
+      alldata: `select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "TimeQueued",  DATE_FORMAT(QueueDate, "%M %d, %Y") as "DateQueued", DATE_FORMAT(StartTime, "%l:%i %p") as "StartTime", DATE_FORMAT(EndTime, "%l:%i %p") as "EndTime", type as "Type", appt_main.virtual as "Virtual" FROM appt_main ORDER BY apptid DESC LIMIT 5;`,
     };
 
     console.log(categories[category]);
@@ -296,30 +291,54 @@ const controller = {
     console.log("--- Editing appointment ---");
     let location = "luzon"; //TODO: make a function to get if location if luzon or vismin
     //TODO: change to req.body dynamic (hardcoded for now to test)
-    let status = "Complete";
-    let apptid = "00000MMMMMMMMMMMMMMMMMMMMMMMMMMM";
+
+    const jsonData = req.body.json;
+    const {
+      apptid,
+      status,
+      TimeQueued,
+      QueueDate,
+      StartTime,
+      EndTime,
+      type,
+      virtual,
+    } = JSON.parse(jsonData);
 
     let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
 
+    // Format date and time values
+    const = formattedDatetime(TimeQueued);
+    const formattedStartTime = formattedDatetime(StartTime);
+    const formattedEndTime = formattedDatetime(EndTime);
+
+    const apptData = [
+      status,
+      formattedTimeQueued,
+      QueueDate,
+      formattedStartTime,
+      formattedEndTime,
+      type,
+      virtual,
+      apptid,
+    ];
     //TODO: also update central node if subnode is not yet central
     //update subnode
     try {
       // Update subnode
       const result = await connect.dbQuery(
         node,
-        "UPDATE appt_main SET status = ? WHERE apptid = ?",
-        [status, apptid]
+        `UPDATE appt_main SET status = ?, TimeQueued = ?, QueueDate = ?, StartTime = ?, EndTime = ?, type = ?, appt_main.Virtual = ? WHERE apptid = ?`,
+        apptData
       );
-      console.log("Appointment successfully updated");
+
+      if (result) {
+        console.log("Appointment successfully updated");
+        res.status(200).json({ message: "Appointment successfully updated" });
+      }
     } catch (err) {
       console.log(err);
       return res.status(500).send("Error: appointment was not updated");
     }
-
-    res.render("home", {
-      maincss: "/static/css/main.css",
-      mainscript: "/static/js/home.js",
-    });
   },
 
   searchAppointment: async function (req, res) {
@@ -338,7 +357,7 @@ const controller = {
       // Update subnode
       const [result] = await connect.dbQuery(
         node,
-        `select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "TimeQueued",  DATE_FORMAT(TimeQueued, "%M %d, %Y") as "DateQueued", DATE_FORMAT(StartTime, "%l:%i %p") as "StartTime", DATE_FORMAT(EndTime, "%l:%i %p") as "EndTime", type as "Type", appt_main.virtual as "Virtual" FROM appt_main where apptid = ?;`,
+        `select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "TimeQueued",  DATE_FORMAT(QueueDate, "%M %d, %Y") as "DateQueued", DATE_FORMAT(StartTime, "%l:%i %p") as "StartTime", DATE_FORMAT(EndTime, "%l:%i %p") as "EndTime", type as "Type", appt_main.virtual as "Virtual" FROM appt_main where apptid = ?;`,
         [apptid]
       );
 
@@ -380,7 +399,7 @@ const controller = {
       const result = await connect.dbQuery(
         node,
         "DELETE FROM appt_main WHERE apptid = ?",
-        [apptid]
+        apptid
       );
 
       if (result) {

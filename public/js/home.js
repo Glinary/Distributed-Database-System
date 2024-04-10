@@ -228,6 +228,78 @@ async function deleteSubmit(event) {
   }
 }
 
+async function updateSubmit(event) {
+  event.preventDefault();
+
+  const updateForm = document.forms.updateForm;
+  const formData = new FormData(updateForm);
+
+  const data = {};
+  for (const entry of formData.entries()) {
+    data[entry[0]] = entry[1];
+  }
+
+  // Serialize the JS object into JSON string
+  const json = JSON.stringify(data);
+
+  body = { json: json };
+
+  console.log("TO update");
+  console.log(json);
+  const { apptid } = JSON.parse(json);
+
+  console.log(JSON.parse(json));
+
+  const response = await fetch(`/editAppointment`, {
+    method: "POST",
+    body: JSON.stringify(body),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (response.status == 200) {
+    console.log("SUCCESS");
+    const jsonMes = await response.json();
+    const message = jsonMes.message;
+
+    Swal.fire({
+      position: "center",
+      icon: "success",
+      title: message,
+      showConfirmButton: false,
+      timer: 1800,
+    });
+    updateForm.reset();
+    await showUpdate(apptid);
+  }
+}
+
+async function showUpdate(apptid) {
+  console.log(apptid);
+  json = { apptid };
+  console.log(json);
+
+  const response = await fetch(`/searchAppointment`, {
+    method: "POST",
+    body: JSON.stringify(body),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (response.status == 200) {
+    console.log("SUCCESS search");
+    const jsonMes = await response.json();
+    const appointment = jsonMes.appt;
+    const table = [appointment[0]];
+    searchSucc = 1;
+
+    console.log(table);
+    createTable(table);
+  }
+}
+
 async function searchSubmit(event) {
   event.preventDefault();
 
@@ -263,7 +335,7 @@ async function searchSubmit(event) {
     console.log("value", document.getElementById("pxid").value);
     changeValues(appointment);
     checkPage();
-    // searchForm.reset();
+    searchForm.reset();
   }
 }
 
@@ -273,13 +345,14 @@ function changeValues(appointment) {
   const appUpdate = document.getElementById("appt-update");
   appUpdate.style.display = "block"; // Make sure the form is visible
 
-  virCateg = { 1: 0, 0: 1 };
+  virCateg = { 0: 0, 1: 1 };
   selCateg = { Consultation: 0, Inpatient: 1 };
 
   // Set input values based on the retrieved appointment data
   document.getElementById("pxidU").value = appointment[0].pxid;
   document.getElementById("clinicidU").value = appointment[0].clinicid;
   document.getElementById("doctoridU").value = appointment[0].doctorid;
+  document.getElementById("apptidU").value = appointment[0].apptid;
   document.getElementById("opSelectU").value = appointment[0].status;
   document.getElementById("TimeQueuedU").value = setTime(
     appointment[0].TimeQueued
@@ -294,21 +367,6 @@ function changeValues(appointment) {
   document.getElementById("updateSelect").selectedIndex =
     selCateg[appointment[0].Type];
   document.getElementById("virSelect").value = virCateg[appointment[0].Virtual];
-
-  // Debugging: Log values after setting them
-  console.log("pxid value:", document.getElementById("pxidU").value);
-  console.log("clinicid value:", document.getElementById("clinicidU").value);
-  console.log("doctorid value:", document.getElementById("doctoridU").value);
-  console.log("status value:", document.getElementById("opSelectU").value);
-  console.log(
-    "TimeQueued value:",
-    document.getElementById("TimeQueuedU").value
-  );
-  console.log("QueueDate value:", document.getElementById("QueueDateU").value);
-  console.log("StartTime value:", document.getElementById("StartTimeU").value);
-  console.log("EndTime value:", document.getElementById("EndTimeU").value);
-  console.log("type value:", document.getElementById("updateSelect").value);
-  console.log("virtual value:", document.getElementById("virSelect").value);
 }
 
 function setDate(dateString) {
@@ -366,6 +424,7 @@ async function fetchNewlyAdded() {
   if (response.status == 200) {
     let rowsJson = await response.json();
     const rows = rowsJson.rows;
+    console.log("TABLE: ", rows);
     createTable(rows);
   }
 }
