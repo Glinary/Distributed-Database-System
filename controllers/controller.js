@@ -40,6 +40,7 @@ const controller = {
   getAllData: async function (req, res) {
     const category = req.body.data;
     const pageNum = req.body.pageNum;
+    const location = req.body.region;
 
     const categories = {
       alldoctors: `SELECT doctorid, mainspecialty AS "Main Specialty", age FROM doctors LIMIT 15 OFFSET ${

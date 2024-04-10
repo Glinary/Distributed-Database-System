@@ -125,6 +125,7 @@ async function fetchData() {
   body = {
     data: categories[category],
     pageNum: pageNum,
+    region: region,
   };
 
   const response = await fetch(`/alldata`, {
