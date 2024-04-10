@@ -38,10 +38,9 @@ const controller = {
   },
 
   getAllData: async function (req, res) {
-    console.log("---HERE---");
-
     const category = req.body.data;
     const pageNum = req.body.pageNum;
+    const location = req.body.region;
 
     const categories = {
       alldoctors: `SELECT doctorid, mainspecialty AS "Main Specialty", age FROM doctors LIMIT 15 OFFSET ${
@@ -56,9 +55,6 @@ const controller = {
                       DATE_FORMAT(EndTime, "%l:%i %p") AS "End Time",
                       type AS "Type", appt_main.virtual AS "Virtual"
                FROM appt_main LIMIT 15 OFFSET ${(pageNum - 1) * 15};`,
-      // alldata: `SELECT pxid, clinicid, doctorid, apptid, status, TimeQueued, QueueDate, StartTime, EndTime, type AS "Type", appt_main.virtual as "Virtual" FROM appt_main LIMIT 15 OFFSET ${
-      //   (pageNum - 1) * 15
-      // };`,
     };
 
     //TODO: Search on the chosen node first before querying on central node, then fail if wala talaga
@@ -103,26 +99,17 @@ const controller = {
 
       console.table(result2);
       res.status(200).json({ rows: result2 });
-
-      // const combinedData = appointments.concat(appointments2);
-      // const uniqueData = [
-      //   ...new Map(combinedData.map((item) => [item.id, item])).values(),
-      // ];
-      // uniqueData.sort((a, b) => a.id - b.id);
-      // //sample of how to read output
-      // appointments2.forEach((appointment2) => {
-      //   console.log(appointment2.status);
-      // });
-      // res.render("home", {
-      //   maincss: "/static/css/main.css",
-      //   mainscript: "/static/js/home.js",
-      // });
     }
   },
 
   postAppointment: async (req, res) => {
-    try {//TODO: make a function to get location of where user wants to add
+    try {
+      //TODO: make a function to get location of where user wants to add
+      /*
+       * NOTE: if writing, always to master node.
+       */
       const location = "luzon";
+
       const jsonData = req.body.json;
       const {
         pxid,
@@ -188,7 +175,7 @@ const controller = {
       TODO: Insert the appointment data into the central node first, 
             if node is not initially equal to central node
       */
-      // 
+      //
 
       // Insert the appointment data into the database
       const insertResult = await connect.dbQuery(
@@ -211,23 +198,15 @@ const controller = {
 
   getAllNewData: async function (req, res) {
     console.log("---HERE ALL NEW DATA---");
-
-    const category = req.body.data;
-    const pageNum = req.body.pageNum;
+    const region = req.body.region;
 
     //TODO: Do not hardcode luzon as the location
+    //TODO: Delete later
+    // let location = region;
     let location = "luzon";
     let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
 
-    const categories = {
-      alldoctors: `select doctorid, mainspecialty as "Main Specialty", age from doctors ORDER BY doctorid DESC LIMIT 5;`,
-      allclinic: `select * from clinics ORDER BY clinicid DESC LIMIT 5;`,
-      allpatients: `SELECT pxid, age, gender FROM px ORDER BY pxid DESC LIMIT 5;`,
-      alldata: `select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "TimeQueued",  DATE_FORMAT(QueueDate, "%M %d, %Y") as "DateQueued", DATE_FORMAT(StartTime, "%l:%i %p") as "StartTime", DATE_FORMAT(EndTime, "%l:%i %p") as "EndTime", type as "Type", appt_main.virtual as "Virtual" FROM appt_main ORDER BY apptid DESC LIMIT 5;`,
-    };
-
-    console.log(categories[category]);
-    const sql = categories[category];
+    const sql = `select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "TimeQueued",  DATE_FORMAT(QueueDate, "%M %d, %Y") as "DateQueued", DATE_FORMAT(StartTime, "%l:%i %p") as "StartTime", DATE_FORMAT(EndTime, "%l:%i %p") as "EndTime", type as "Type", appt_main.virtual as "Virtual" FROM appt_main ORDER BY apptid DESC LIMIT 5;`;
 
     //TODO: if priority node fails, it should search on the central node
     const [result] = await connect.dbQuery(node, sql, []);
@@ -245,8 +224,6 @@ const controller = {
       Virtual: row.Virtual,
     }));
 
-    console.log("Resulttt: ", latestRecords);
-
     if (result) {
       res.status(200).json({ rows: latestRecords }).send();
     }
@@ -254,6 +231,7 @@ const controller = {
 
   getDataCount: async function (req, res) {
     const category = req.body.category;
+    const region = req.body.region;
 
     const categories = {
       doctors: "doctors",
@@ -265,6 +243,9 @@ const controller = {
     // TODO: do not hardcode location
     // Determine which database node to use based on location
     let location = "luzon";
+    //TODO: Delete this ^ later
+    // let location = region;
+
     const node =
       location === "luzon" ? connect.luzon_node : connect.vismin_node;
 
@@ -289,8 +270,13 @@ const controller = {
 
   editAppointment: async function (req, res) {
     console.log("--- Editing appointment ---");
-    let location = "luzon"; //TODO: make a function to get if location if luzon or vismin
+
+    //TODO: make a function to get if location if luzon or vismin
     //TODO: change to req.body dynamic (hardcoded for now to test)
+    /*
+     * NOTE: if updating, master only.
+     */
+    let location = "luzon";
 
     const jsonData = req.body.json;
     const {
@@ -343,11 +329,13 @@ const controller = {
 
   searchAppointment: async function (req, res) {
     console.log("--- Searching appointment ---");
-    let location = "luzon"; //TODO: make a function to get if location if luzon or vismin
-    //TODO: change to req.body dynamic (hardcoded for now to test)
+
+    let region = req.body.region;
+    let location = region;
+
     let body = req.body.json;
     const { apptid } = JSON.parse(body);
-    console.log("apptid:", apptid);
+    console.log("region: ", region);
 
     let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
 
@@ -362,7 +350,7 @@ const controller = {
       );
 
       if (result) {
-        console.log("Appointment successfully updated");
+        console.log("Appointment searched succesfully");
         const appointments = result.map((row) => ({
           pxid: row.pxid,
           clinicid: row.clinicid,
@@ -381,13 +369,18 @@ const controller = {
       }
     } catch (err) {
       console.log(err);
-      return res.status(500).send("Error: appointment was not updated");
+      return res.status(500).send("Error: appointment was not searched");
     }
   },
 
   deleteAppointment: async function (req, res) {
     console.log("--- Deleting appointment ---");
-    let location = "luzon"; //TODO: make a function to get if location if luzon or vismin
+    //TODO: make a function to get if location if luzon or vismin
+    /*
+     * NOTE: if writing/deleting, always sa master
+     */
+    let location = "luzon";
+
     const apptids = req.body.json;
     const { apptid } = JSON.parse(apptids);
 
