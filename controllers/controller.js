@@ -188,7 +188,7 @@ const controller = {
       // update the central node first
       try {
         const master_insertResult = await connect.dbQuery(
-          node.central_node,
+          connect.central_node,
           `INSERT INTO appt_main SET ?`,
           apptData
         );
