@@ -20,7 +20,7 @@ function formattedDatetime(timeString) {
   console.log("Hour Min", hours, minutes);
   // Create a new Date object with today's date and the specified time
   const today = new Date();
-  today.setHours(hours - 4);
+  today.setHours(hours + 8);
   today.setMinutes(minutes);
   today.setSeconds(0); // Set seconds to zero if you don't need them
 
