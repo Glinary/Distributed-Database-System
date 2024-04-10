@@ -390,7 +390,6 @@ const controller = {
 
     let body = req.body.json;
     const { apptid } = JSON.parse(body);
-    console.log("region: ", region);
 
     let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
 
