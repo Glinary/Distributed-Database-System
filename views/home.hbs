@@ -7,16 +7,6 @@
     </select>
 
     <div id="table-container"></div>
-
-    <form method="POST" action="/postAppointment">
-        <button>postttttttttttappointmenttt</button>
-    </form>
-    <form method="POST" action="/editAppointment">
-        <button>eeeedddiiitttttappointmenttt</button>
-    </form>
-    <form method="POST" action="/deleteAppointment">
-        <button>deeeelllleeeettteeeeeeeeeeappointmenttt</button>
-    </form>
     <div class="button-wrapper">
         <button id="prevButton">Previous Page</button>
         <button id="nextButton">Next Page</button>
@@ -141,6 +131,7 @@
                         <label for="doctorid">doctorid</label>
                         <input type="text" id="doctoridU" name="doctorid"required>
                     </div>
+                    <input type="hidden" id="apptidU" name="apptid">
                     <div class="opt">
                         <label for="status">Status</label>
                         <select id="opSelectU" name="status">
@@ -183,7 +174,7 @@
                         </select>
                     </div>
                 </div>
-                <button type="submit" onclick="searchSubmit(event)">Submit</button>
+                <button type="submit" onclick="updateSubmit(event)">Submit</button>
             </form>
         </div>
     </div>
