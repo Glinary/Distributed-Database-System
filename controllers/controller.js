@@ -1,16 +1,9 @@
 import express from "express";
 import bodyParser from "body-parser";
-import mysql from "mysql2";
 import connect from "../connect.js";
 
 const app = express();
 app.use(bodyParser.json());
-
-//use function to check connections to 3 nodes
-//checkConnections();
-
-// use function to view 10 doctors
-// viewDoctors()
 
 function formattedDatetime(timeString) {
   const [hours, minutes] = timeString
@@ -57,25 +50,46 @@ const controller = {
                FROM appt_main LIMIT 15 OFFSET ${(pageNum - 1) * 15};`,
     };
 
-    //TODO: Search on the chosen node first before querying on central node, then fail if wala talaga
-    async function connectionReRoute() {
+    //Search on the chosen node first before querying on central node, then fail if none
+    async function connectionReRoute(node_num) {
       let connection;
-      try {
-        connection = connect.central_node.getConnection();
-        node = connect.central_node;
-      } catch (err) {
-        try {
-          connection = connect.luzon_node.getConnection();
-          node = connect.luzon_node;
-        } catch (err) {
+      switch(node_num) {
+        case 2: //user chose luzon region
+          try {
+            connection = connect.luzon_node.getConnection();
+            node = connect.luzon_node;
+          } catch (err) {
+            try {
+              connection = connect.central_node.getConnection();
+              node = connect.central_node;
+            } catch (err) {
+              console.log(err);
+              res.status(500).send("Error retrieving data from database");
+            }
+          }
+          break;
+        case 3: //user chose visayas/mindanao region
           try {
             connection = connect.vismin_node.getConnection();
             node = connect.vismin_node;
           } catch (err) {
+            try {
+              connection = connect.central_node.getConnection();
+              node = connect.central_node;
+            } catch (err) {
+              console.log(err);
+              res.status(500).send("Error retrieving data from database"); 
+            }
+          }
+          break;
+        default:
+          try {
+            connection = connect.central_node.getConnection();
+            node = connect.central_node;
+          } catch (err) {
             console.log(err);
             res.status(500).send("Error retrieving data from database");
           }
-        }
       }
     }
 
@@ -171,13 +185,25 @@ const controller = {
         virtual,
       };
 
-      /*
-      TODO: Insert the appointment data into the central node first, 
-            if node is not initially equal to central node
-      */
-      //
+      // update the central node first
+      try {
+        const master_insertResult = await connect.dbQuery(
+          node.central_node,
+          `INSERT INTO appt_main SET ?`,
+          apptData
+        );
+        if (master_insertResult) {
+          console.log("Appointment successfully added");
+          res.status(200).json({ message: "Appointment successfully added"});
+        } else {
+          throw new Error("Failed to add appointment");
+        }
+      } catch (error) {
+        console.error("Error adding appointment:", error);
+        res.status(500).json({ message: "Failed to add appointment" });
+      }
 
-      // Insert the appointment data into the database
+      // Insert the appointment data into the slave node
       const insertResult = await connect.dbQuery(
         node,
         `INSERT INTO appt_main SET ?`,
@@ -208,8 +234,28 @@ const controller = {
 
     const sql = `select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "TimeQueued",  DATE_FORMAT(QueueDate, "%M %d, %Y") as "DateQueued", DATE_FORMAT(StartTime, "%l:%i %p") as "StartTime", DATE_FORMAT(EndTime, "%l:%i %p") as "EndTime", type as "Type", appt_main.virtual as "Virtual" FROM appt_main ORDER BY apptid DESC LIMIT 5;`;
 
-    //TODO: if priority node fails, it should search on the central node
+    //TODO: check if priority node fails, it should connect on the central node
     const [result] = await connect.dbQuery(node, sql, []);
+    if (isEmptyArray([result])) {
+      const [master_result] = await connect.dbQuery(connect.central_node, sql, []);
+
+      const master_latestRecords = master_result.map((row) => ({
+        pxid: row.pxid,
+        clinicid: row.clinicid,
+        doctorid: row.doctorid,
+        apptid: row.apptid,
+        status: row.status,
+        TimeQueued: row.TimeQueued,
+        QueueDate: row.DateQueued,
+        StartTime: row.StartTime,
+        EndTime: row.EndTime,
+        Virtual: row.Virtual,
+      }));
+
+      if (master_result) {
+        res.status(200).json({ rows: master_latestRecords }).send();
+      }
+    }
 
     const latestRecords = result.map((row) => ({
       pxid: row.pxid,
@@ -249,15 +295,21 @@ const controller = {
     const node =
       location === "luzon" ? connect.luzon_node : connect.vismin_node;
 
-    // TODO: also update the central node if node is not yet central
     const sql = `SELECT COUNT(*) as count FROM ${categories[category]};`;
-    // Insert the appointment data into the database
-    const insertResult = await connect.dbQuery(node, sql, []);
+    // update central node
+    const master_insertResult = await connect.dbQuery(connect.central_node, sql, []);
+    if (master_insertResult) {
+      console.log("INSERT: ", master_insertResult[0][0].count);
+      
+      // Insert the appointment data into the database
+      const insertResult = await connect.dbQuery(node, sql, []);
 
-    if (insertResult) {
-      console.log("INSERT: ", insertResult[0][0].count);
-      res.status(200).json({ rows: insertResult }).send();
+      if (insertResult) {
+        console.log("INSERT: ", insertResult[0][0].count);
+        res.status(200).json({ rows: insertResult }).send();
+      }
     }
+    
   },
 
   getDoctors: async function (req, res) {
@@ -270,13 +322,7 @@ const controller = {
 
   editAppointment: async function (req, res) {
     console.log("--- Editing appointment ---");
-
-    //TODO: make a function to get if location if luzon or vismin
-    //TODO: change to req.body dynamic (hardcoded for now to test)
-    /*
-     * NOTE: if updating, master only.
-     */
-    let location = "luzon";
+    let location = "luzon"; //TODO: make a function to get if location if luzon or vismin
 
     const jsonData = req.body.json;
     const {
@@ -307,19 +353,27 @@ const controller = {
       virtual,
       apptid,
     ];
-    //TODO: also update central node if subnode is not yet central
-    //update subnode
+    // update central node first
     try {
-      // Update subnode
-      const result = await connect.dbQuery(
-        node,
-        `UPDATE appt_main SET status = ?, TimeQueued = ?, QueueDate = ?, StartTime = ?, EndTime = ?, type = ?, appt_main.Virtual = ? WHERE apptid = ?`,
-        apptData
+      const master_result = await connect.dbQuery(connect.central_node,
+      `UPDATE appt_main SET status = ?, TimeQueued = ?, QueueDate = ?, StartTime = ?, EndTime = ?, type = ?, appt_main.Virtual = ? WHERE apptid = ?`,
+      apptData
       );
 
-      if (result) {
+      if (master_result) {
         console.log("Appointment successfully updated");
-        res.status(200).json({ message: "Appointment successfully updated" });
+
+        //update subnode
+        try {
+          const result = await connect.dbQuery(
+            node,
+            `UPDATE appt_main SET status = ?, TimeQueued = ?, QueueDate = ?, StartTime = ?, EndTime = ?, type = ?, appt_main.Virtual = ? WHERE apptid = ?`,
+            apptData
+          )
+        } catch (err) {
+          console.log(err);
+          return res.status(500).send("Error: appointment was not updated");
+        }
       }
     } catch (err) {
       console.log(err);
@@ -339,7 +393,7 @@ const controller = {
 
     let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
 
-    //TODO: search on central node if subnode fails
+    //TODO:check if it searches on central node once subnode fails
     //update subnode
     try {
       // Update subnode
@@ -349,6 +403,33 @@ const controller = {
         [apptid]
       );
 
+      if (isEmptyArray([result])) {
+        const [master_result] = await connect.dbQuery(
+          connect.central_node,
+          `select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "TimeQueued",  DATE_FORMAT(QueueDate, "%M %d, %Y") as "DateQueued", DATE_FORMAT(StartTime, "%l:%i %p") as "StartTime", DATE_FORMAT(EndTime, "%l:%i %p") as "EndTime", type as "Type", appt_main.virtual as "Virtual" FROM appt_main where apptid = ?;`,
+          [apptid]
+        )
+        //transfer to central since subnode failed
+        if (master_result) {
+          console.log("Appointment successfully updated");
+          const master_appointments = master_result.map((row) => ({
+            pxid: row.pxid,
+            clinicid: row.clinicid,
+            doctorid: row.doctorid,
+            apptid: row.apptid,
+            status: row.status,
+            TimeQueued: row.TimeQueued,
+            QueueDate: row.DateQueued,
+            StartTime: row.StartTime,
+            EndTime: row.EndTime,
+            Type: row.Type,
+            Virtual: row.Virtual,
+          }));
+          console.log(appointments);
+          res.status(200).json({ appt: master_appointments });
+        }
+      };
+  
       if (result) {
         console.log("Appointment searched succesfully");
         const appointments = result.map((row) => ({
@@ -386,7 +467,23 @@ const controller = {
 
     let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
 
-    //TODO: also update the central
+    try {
+      // update central
+      const master_result = await connect.dbQuery(
+        connect.central_node,
+        "DELETE FROM appt_main WHERE apptid = ?",
+        apptid
+      );
+
+      if (master_result) {
+        console.log("Appointment successfully deleted");
+        res.status(200).json({ message: "Appointment successfully deleted" });
+      }
+    } catch (err) {
+      console.log(err);
+      return res.status(500).send("Error: appointment was not deleted");
+    }
+
     try {
       // Update subnode
       const result = await connect.dbQuery(
@@ -405,5 +502,9 @@ const controller = {
     }
   },
 };
+
+function isEmptyArray(arr) {
+  return Array.isArray(arr) && arr.length === 0;
+}
 
 export default controller;
