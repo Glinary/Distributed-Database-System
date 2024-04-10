@@ -307,7 +307,7 @@ const controller = {
     let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
 
     // Format date and time values
-    const formattedDatetime(TimeQueued);
+    const formattedTimeQueued = formattedDatetime(TimeQueued);
     const formattedStartTime = formattedDatetime(StartTime);
     const formattedEndTime = formattedDatetime(EndTime);
 
