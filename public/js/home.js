@@ -171,6 +171,50 @@ async function addSubmit(event) {
   }
 }
 
+async function deleteSubmit(event) {
+  event.preventDefault();
+
+  const deleteForm = document.forms.deleteForm;
+  const formData = new FormData(deleteForm);
+
+  const data = {};
+  for (const entry of formData.entries()) {
+    data[entry[0]] = entry[1];
+  }
+
+  // Serialize the JS object into JSON string
+  const json = JSON.stringify(data);
+
+  body = { category: category, json };
+
+  console.log("TO STORE");
+  console.log(json);
+
+  const response = await fetch(`/deleteAppointment`, {
+    method: "POST",
+    body: JSON.stringify(body),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (response.status == 200) {
+    console.log("SUCCESS");
+    const jsonMes = await response.json();
+    const message = jsonMes.message;
+
+    Swal.fire({
+      position: "center",
+      icon: "success",
+      title: message,
+      showConfirmButton: false,
+      timer: 1800,
+    });
+    deleteForm.reset();
+    onload();
+  }
+}
+
 async function fetchNewlyAdded() {
   body = {
     data: categories[category],

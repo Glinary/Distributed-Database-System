@@ -310,10 +310,10 @@ const controller = {
   },
 
   deleteAppointment: async function (req, res) {
-    console.log("--- Editing appointment ---");
+    console.log("--- Deleting appointment ---");
     let location = "luzon"; //TODO: make a function to get if location if luzon or vismin
-    //TODO: change to req.body dynamic (hardcoded for now to test)
-    let apptid = "00000MMMMMMMMMMMMMMMMMMMMMMMMMMM";
+    const apptids = req.body.json;
+    const { apptid } = JSON.parse(apptids);
 
     let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
 
@@ -324,16 +324,15 @@ const controller = {
         "DELETE FROM appt_main WHERE apptid = ?",
         [apptid]
       );
-      console.log("Appointment successfully updated");
+
+      if (result) {
+        console.log("Appointment successfully deleted");
+        res.status(200).json({ message: "Appointment successfully deleted" });
+      }
     } catch (err) {
       console.log(err);
-      return res.status(500).send("Error: appointment was not updated");
+      return res.status(500).send("Error: appointment was not deleted");
     }
-
-    res.render("home", {
-      maincss: "/static/css/main.css",
-      mainscript: "/static/js/home.js",
-    });
   },
 };
 
