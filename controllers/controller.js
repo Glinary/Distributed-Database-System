@@ -255,8 +255,28 @@ const controller = {
     console.log(categories[category]);
     const sql = categories[category];
 
-    //TODO: if priority node fails, it should connect on the central node
+    //TODO: check if priority node fails, it should connect on the central node
     const [result] = await connect.dbQuery(node, sql, []);
+    if (isEmptyArray([result])) {
+      const [master_result] = await connect.dbQuery(connect.central_node, sql, []);
+
+      const master_latestRecords = master_result.map((row) => ({
+        pxid: row.pxid,
+        clinicid: row.clinicid,
+        doctorid: row.doctorid,
+        apptid: row.apptid,
+        status: row.status,
+        TimeQueued: row.TimeQueued,
+        QueueDate: row.DateQueued,
+        StartTime: row.StartTime,
+        EndTime: row.EndTime,
+        Virtual: row.Virtual,
+      }));
+
+      if (master_result) {
+        res.status(200).json({ rows: master_latestRecords }).send();
+      }
+    }
 
     const latestRecords = result.map((row) => ({
       pxid: row.pxid,
@@ -389,7 +409,7 @@ const controller = {
 
     let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
 
-    //TODO: search on central node if subnode fails
+    //TODO:check if it searches on central node once subnode fails
     //update subnode
     try {
       // Update subnode
@@ -399,6 +419,33 @@ const controller = {
         [apptid]
       );
 
+      if (isEmptyArray([result])) {
+        const [master_result] = await connect.dbQuery(
+          connect.central_node,
+          `select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "TimeQueued",  DATE_FORMAT(QueueDate, "%M %d, %Y") as "DateQueued", DATE_FORMAT(StartTime, "%l:%i %p") as "StartTime", DATE_FORMAT(EndTime, "%l:%i %p") as "EndTime", type as "Type", appt_main.virtual as "Virtual" FROM appt_main where apptid = ?;`,
+          [apptid]
+        )
+        //transfer to central since subnode failed
+        if (master_result) {
+          console.log("Appointment successfully updated");
+          const master_appointments = master_result.map((row) => ({
+            pxid: row.pxid,
+            clinicid: row.clinicid,
+            doctorid: row.doctorid,
+            apptid: row.apptid,
+            status: row.status,
+            TimeQueued: row.TimeQueued,
+            QueueDate: row.DateQueued,
+            StartTime: row.StartTime,
+            EndTime: row.EndTime,
+            Type: row.Type,
+            Virtual: row.Virtual,
+          }));
+          console.log(appointments);
+          res.status(200).json({ appt: master_appointments });
+        }
+      };
+  
       if (result) {
         console.log("Appointment successfully updated");
         const appointments = result.map((row) => ({
@@ -466,5 +513,9 @@ const controller = {
     }
   },
 };
+
+function isEmptyArray(arr) {
+  return Array.isArray(arr) && arr.length === 0;
+}
 
 export default controller;
