@@ -11,7 +11,7 @@ router.post("/deleteAppointment", controller.deleteAppointment);
 router.post("/alldata", controller.getAllData);
 router.post("/allNewData", controller.getAllNewData);
 router.post("/dataCount", controller.getDataCount);
-router.post("/postAppointment", controller.getAddToDB);
+router.post("/postAppointment", controller.postAppointment);
 router.get("/doctors", controller.getHome);
 router.get("/clinics", controller.getHome);
 router.get("/patients", controller.getHome);

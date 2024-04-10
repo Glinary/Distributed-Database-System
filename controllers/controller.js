@@ -119,7 +119,7 @@ const controller = {
     }
   },
 
-  getAddToDB: async (req, res) => {
+  postAppointment: async (req, res) => {
     try {
       const location = "luzon";
       const jsonData = req.body.json;
