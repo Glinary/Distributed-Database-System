@@ -273,30 +273,80 @@ function changeValues(appointment) {
   const appUpdate = document.getElementById("appt-update");
   appUpdate.style.display = "block"; // Make sure the form is visible
 
+  virCateg = { 1: 0, 0: 1 };
+  selCateg = { Consultation: 0, Inpatient: 1 };
+
   // Set input values based on the retrieved appointment data
-  document.getElementById("pxid").value = appointment[0].pxid;
-  document.getElementById("clinicid").value = appointment[0].clinicid;
-  document.getElementById("doctorid").value = appointment[0].doctorid;
-  document.getElementById("opSelect").value = appointment[0].status;
-  document.getElementById("TimeQueued").value = appointment[0].TimeQueued;
-  document.getElementById("QueueDate").value = appointment[0].QueueDate;
-  document.getElementById("StartTime").value = appointment[0].StartTime;
-  document.getElementById("EndTime").value = appointment[0].EndTime;
-  document.getElementById("opSelect").selectedIndex = 0;
-  //   document.getElementById("virtual").value =
-  //     appointment[0].Virtual === 1 ? "1" : "0";
+  document.getElementById("pxidU").value = appointment[0].pxid;
+  document.getElementById("clinicidU").value = appointment[0].clinicid;
+  document.getElementById("doctoridU").value = appointment[0].doctorid;
+  document.getElementById("opSelectU").value = appointment[0].status;
+  document.getElementById("TimeQueuedU").value = setTime(
+    appointment[0].TimeQueued
+  );
+  document.getElementById("QueueDateU").value = setDate(
+    appointment[0].QueueDate
+  );
+  document.getElementById("StartTimeU").value = setTime(
+    appointment[0].StartTime
+  );
+  document.getElementById("EndTimeU").value = setTime(appointment[0].EndTime);
+  document.getElementById("updateSelect").selectedIndex =
+    selCateg[appointment[0].Type];
+  document.getElementById("virSelect").value = virCateg[appointment[0].Virtual];
 
   // Debugging: Log values after setting them
-  console.log("pxid value:", document.getElementById("pxid").value);
-  console.log("clinicid value:", document.getElementById("clinicid").value);
-  console.log("doctorid value:", document.getElementById("doctorid").value);
-  console.log("status value:", document.getElementById("opSelect").value);
-  console.log("TimeQueued value:", document.getElementById("TimeQueued").value);
-  console.log("QueueDate value:", document.getElementById("QueueDate").value);
-  console.log("StartTime value:", document.getElementById("StartTime").value);
-  console.log("EndTime value:", document.getElementById("EndTime").value);
-  console.log("type value:", document.getElementById("opSelect").value);
-  console.log("virtual value:", document.getElementById("virtual").value);
+  console.log("pxid value:", document.getElementById("pxidU").value);
+  console.log("clinicid value:", document.getElementById("clinicidU").value);
+  console.log("doctorid value:", document.getElementById("doctoridU").value);
+  console.log("status value:", document.getElementById("opSelectU").value);
+  console.log(
+    "TimeQueued value:",
+    document.getElementById("TimeQueuedU").value
+  );
+  console.log("QueueDate value:", document.getElementById("QueueDateU").value);
+  console.log("StartTime value:", document.getElementById("StartTimeU").value);
+  console.log("EndTime value:", document.getElementById("EndTimeU").value);
+  console.log("type value:", document.getElementById("updateSelect").value);
+  console.log("virtual value:", document.getElementById("virSelect").value);
+}
+
+function setDate(dateString) {
+  // Parse the input date string to create a Date object
+  const dateObject = new Date(dateString);
+
+  // Get the year, month, and day components from the Date object
+  const year = dateObject.getFullYear();
+  const month = (dateObject.getMonth() + 1).toString().padStart(2, "0"); // Months are zero-indexed
+  const day = dateObject.getDate().toString().padStart(2, "0");
+
+  // Construct the date string in "YYYY-MM-DD" format
+  const formattedDate = `${year}-${month}-${day}`;
+
+  return formattedDate;
+}
+
+function setTime(timeString) {
+  // Parse the input time string (e.g., "10:30 AM") to extract hours and minutes
+  const timeComponents = timeString.split(":");
+  let hours = parseInt(timeComponents[0]);
+  const minutes = timeComponents[1].split(" ")[0]; // Extract minutes without AM/PM
+
+  // Adjust hours for PM times (assuming 12-hour format)
+  if (timeString.includes("PM") && hours < 12) {
+    hours += 12;
+  } else if (timeString.includes("AM") && hours === 12) {
+    hours = 0; // Midnight (12:xx AM) should be 0:xx in 24-hour format
+  }
+
+  // Format hours and minutes as two-digit strings
+  const formattedHours = hours.toString().padStart(2, "0");
+  const formattedMinutes = minutes.padStart(2, "0");
+
+  // Construct the time string in "HH:mm" (24-hour) format
+  const formattedTime = `${formattedHours}:${formattedMinutes}`;
+
+  return formattedTime;
 }
 
 async function fetchNewlyAdded() {

@@ -131,19 +131,19 @@
                 <div class="elements">
                     <div class="opt">
                         <label for="pxid">pxid</label>
-                        <input type="text" id="pxid" name="pxid" required>
+                        <input type="text" id="pxidU" name="pxid" required>
                     </div>
                     <div class="opt">
                         <label for="clinicid">clinicid</label>
-                        <input type="text" id="clinicid" name="clinicid"required>
+                        <input type="text" id="clinicidU" name="clinicid"required>
                     </div>
                     <div class="opt">
                         <label for="doctorid">doctorid</label>
-                        <input type="text" id="doctorid" name="doctorid"required>
+                        <input type="text" id="doctoridU" name="doctorid"required>
                     </div>
                     <div class="opt">
-                        <label for="gender">Status</label>
-                        <select id="opSelect" name="status">
+                        <label for="status">Status</label>
+                        <select id="opSelectU" name="status">
                             <option value="Complete">Complete</option>
                             <option value="Queued" selected>Queued</option>
                             <option value="No Show">NoShow</option>
@@ -154,30 +154,30 @@
                     </div>
                     <div class="opt">
                         <label for="timeQueued">Time Queued</label>
-                        <input type="time" id="TimeQueued" name="TimeQueued" min="1:00" max="12:00" required />
+                        <input type="time" id="TimeQueuedU" name="TimeQueued" min="1:00" max="12:00" required />
                     </div>
                     <div class="opt">
                         <label for="dateQueued">Date Queued</label>
-                        <input  type="date" id="QueueDate" name="QueueDate" required />
+                        <input  type="date" id="QueueDateU" name="QueueDate" required />
                     </div>
                     <div class="opt">
                         <label for="startTime">Start Time</label>
-                        <input type="time" id="StartTime" name="StartTime" min="1:00" max="12:00"  required />
+                        <input type="time" id="StartTimeU" name="StartTime" min="1:00" max="12:00"  required />
                     </div>
                     <div class="opt">
                         <label for="endTime">End Time</label>
-                        <input type="time" id="EndTime" name="EndTime" min="1:00" max="12:00" required />
+                        <input type="time" id="EndTimeU" name="EndTime" min="1:00" max="12:00" required />
                     </div>
                     <div class="opt">
                         <label for="type">Type</label>
-                        <select id="opSelect" name="type">
+                        <select id="updateSelect" name="type">
                             <option value="Consultation">Consultation</option>
                             <option value="Inpatient">Inpatient</option>
                         </select>
                     </div>
                     <div class="opt">
                         <label for="virtual">Virtual</label>
-                        <select id="opSelect" name="virtual">
+                        <select id="virSelect" name="virtual">
                             <option value="1">Yes</option>
                             <option value="0">No</option>
                         </select>
