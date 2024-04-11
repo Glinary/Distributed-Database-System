@@ -642,8 +642,6 @@ const controller = {
       virtual,
     } = JSON.parse(jsonData);
 
-    let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
-
     // Format date and time values
     const formattedTimeQueued = formattedDatetime(TimeQueued);
     const formattedStartTime = formattedDatetime(StartTime);
@@ -692,6 +690,8 @@ const controller = {
       }
       
     }
+    let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
+
 
     // update central node first
     try {
