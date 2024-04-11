@@ -279,6 +279,7 @@ async function updateSubmit(event) {
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include",
   });
 
   if (response.status == 200) {
@@ -345,6 +346,7 @@ async function searchSubmit(event) {
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include",
   });
 
   if (response.status == 200) {
