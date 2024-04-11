@@ -305,7 +305,7 @@ const controller = {
           res.status(500).send("Error in postAppointment");
         }
 
-        switch (loc) {
+        switch (loc[0][0].RegionName) {
           case "National Capital Region (NCR)":
           case "Ilocos Region (I)":
           case "Cagayan Valley (II)":
@@ -628,7 +628,6 @@ const controller = {
   editAppointment: async function (req, res) {
     //console.log("--- Editing appointment ---");
     let location = req.body.region;
-    let clinicid = req.body.clinicid;
 
     const jsonData = req.body.json;
     const {
@@ -640,6 +639,7 @@ const controller = {
       EndTime,
       type,
       virtual,
+      clinicid
     } = JSON.parse(jsonData);
 
     // Format date and time values
@@ -668,8 +668,7 @@ const controller = {
           clinicid,
         ]);
         //TODO: check if it gets loc successfully with predicted regions list
-  
-        switch (loc) {
+        switch (loc[0][0].RegionName) {
           case "National Capital Region (NCR)":
           case "Ilocos Region (I)":
           case "Cagayan Valley (II)":
@@ -693,6 +692,7 @@ const controller = {
     let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
 
 
+
     // update central node first
     try {
       const master_result = await connect.dbQuery(
@@ -703,7 +703,8 @@ const controller = {
 
       if (master_result) {
         //console.log("Appointment successfully updated");
-
+        //res.status(200).json({message: "Appointment successfully updated"});
+        
         //update subnode
         try {
           const result = await connect.dbQuery(
@@ -716,6 +717,7 @@ const controller = {
             res
               .status(200)
               .json({ message: "Appointment successfully updated" });
+              return;
           }
         } catch (err) {
           console.log(err);
@@ -740,31 +742,17 @@ const controller = {
 
     //search on central only if user chose all server
     if (location == "central") {
+      
       let master_result;
       try {
-        [master_result] = await connect.dbQuery(
+        master_result = await connect.dbQuery(
           connect.central_node,
           `select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "TimeQueued",  DATE_FORMAT(QueueDate, "%M %d, %Y") as "DateQueued", DATE_FORMAT(StartTime, "%l:%i %p") as "StartTime", DATE_FORMAT(EndTime, "%l:%i %p") as "EndTime", type as "Type", appt_main.virtual as "Virtual" FROM appt_main where apptid = ?;`,
           [apptid]
         );
   
         if (master_result) {
-          //console.log("Appointment searched succesfully");
-          const master_appointments = master_result.map((row) => ({
-            pxid: row.pxid,
-            clinicid: row.clinicid,
-            doctorid: row.doctorid,
-            apptid: row.apptid,
-            status: row.status,
-            TimeQueued: row.TimeQueued,
-            QueueDate: row.DateQueued,
-            StartTime: row.StartTime,
-            EndTime: row.EndTime,
-            Type: row.Type,
-            Virtual: row.Virtual,
-          }));
-          //console.log(master_appointments);
-          res.status(200).json({ appt: master_appointments });
+          res.status(200).json({ appt: master_result});
           return;
         }
       } catch (err) {
@@ -794,21 +782,8 @@ const controller = {
           //transfer to central since subnode failed to get a result
           if (master_result) {
             //console.log("Appointment successfully updated");
-            const master_appointments = master_result.map((row) => ({
-              pxid: row.pxid,
-              clinicid: row.clinicid,
-              doctorid: row.doctorid,
-              apptid: row.apptid,
-              status: row.status,
-              TimeQueued: row.TimeQueued,
-              QueueDate: row.DateQueued,
-              StartTime: row.StartTime,
-              EndTime: row.EndTime,
-              Type: row.Type,
-              Virtual: row.Virtual,
-            }));
-            //console.log(appointments);
-            res.status(200).json({ appt: master_appointments });
+            
+            res.status(200).json({ appt: master_result });
             return;
           }
         } catch (err) {
@@ -820,21 +795,8 @@ const controller = {
 
       if (result) {
         //console.log("Appointment searched succesfully");
-        const appointments = result.map((row) => ({
-          pxid: row.pxid,
-          clinicid: row.clinicid,
-          doctorid: row.doctorid,
-          apptid: row.apptid,
-          status: row.status,
-          TimeQueued: row.TimeQueued,
-          QueueDate: row.DateQueued,
-          StartTime: row.StartTime,
-          EndTime: row.EndTime,
-          Type: row.Type,
-          Virtual: row.Virtual,
-        }));
         //console.log(appointments);
-        res.status(200).json({ appt: appointments });
+        res.status(200).json({ appt: result });
       }
     } catch (err) {
       console.log(err);
@@ -860,7 +822,7 @@ const controller = {
           clinicid,
         ]);
   
-        switch (loc) {
+        switch (loc[0][0].RegionName) {
           case "National Capital Region (NCR)":
           case "Ilocos Region (I)":
           case "Cagayan Valley (II)":

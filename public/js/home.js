@@ -176,6 +176,8 @@ async function addSubmit(event) {
     },
   });
 
+  console.log("RESPONSE IS:", response);
+
   if (response.status == 200) {
     console.log("SUCCESS");
     const jsonMes = await response.json();
@@ -256,6 +258,7 @@ async function updateSubmit(event) {
 
   const updateForm = document.forms.updateForm;
   const formData = new FormData(updateForm);
+  console.log("HERHERHE");
 
   const data = {};
   for (const entry of formData.entries()) {
@@ -280,6 +283,7 @@ async function updateSubmit(event) {
       "Content-Type": "application/json",
     },
   });
+  console.log("RESPONSE IS:", response);
 
   if (response.status == 200) {
     console.log("SUCCESS");
@@ -315,7 +319,8 @@ async function showUpdate(apptid) {
     console.log("SUCCESS search");
     const jsonMes = await response.json();
     const appointment = jsonMes.appt;
-    const table = [appointment[0]];
+    console.log("AAAAA:", appointment);
+    const table = [appointment[0][0]];
     searchSucc = 1;
 
     console.log(table);
@@ -337,7 +342,7 @@ async function searchSubmit(event) {
   // Serialize the JS object into JSON string
   const json = JSON.stringify(data);
 
-  body = { json: json };
+  body = { json: json, region: region };
 
   const response = await fetch(`/searchAppointment`, {
     method: "POST",
@@ -354,8 +359,8 @@ async function searchSubmit(event) {
     searchSucc = 1;
 
     console.log(appointment[0]);
-
-    changeValues(appointment);
+    console.log("YOU PRESSED ON SEARCH SUBMIT");
+    changeValues(appointment[0]);
     checkPage();
     searchForm.reset();
   }
@@ -377,6 +382,7 @@ async function gensearchSubmit(event) {
   console.log(json);
 
   body = { json: json, region: region };
+  console.log("YOU PRESSED ON GEN SEARCH SUBMIT", body);
 
   const response = await fetch(`/searchAppointment`, {
     method: "POST",
