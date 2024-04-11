@@ -10,7 +10,6 @@ function formattedDatetime(timeString) {
     .split(":")
     .map((part) => parseInt(part, 10));
 
-  console.log("Hour Min", hours, minutes);
   // Create a new Date object with today's date and the specified time
   const today = new Date();
   today.setHours(hours + 8);
@@ -103,7 +102,7 @@ const controller = {
     }
 
     let node;
-    console.log("Getting data...");
+    //console.log("Getting data...");
 
     const sql = categories[category];
     let result;
@@ -115,7 +114,6 @@ const controller = {
       case "luzon":
         node = await connectionReRoute(2);
         [result] = await connect.dbQuery(node, sql, []);
-        console.log("NODEEE IS:", node);
         break;
       default:
         node = await connectionReRoute(3);
@@ -131,6 +129,96 @@ const controller = {
         node === connect.luzon_node ? connect.luzon_node : connect.vismin_node,
         sql,
         []
+      );
+
+      console.table(result2);
+      res.status(200).json({ rows: result2 });
+    }
+  },
+
+  getStats: async function (req, res) {
+    const status = req.body.status;
+    const pageNum = req.body.pageNum;
+    const location = req.body.region;
+
+    //Search on the chosen node first before querying on central node, then fail if none
+    async function connectionReRoute(node_num) {
+      let connection, node;
+      switch (node_num) {
+        case 2: //user chose luzon region
+          try {
+            connection = connect.luzon_node.getConnection();
+            node = connect.luzon_node;
+          } catch (err) {
+            try {
+              connection = connect.central_node.getConnection();
+              node = connect.central_node;
+            } catch (err) {
+              console.log(err);
+              res.status(500).send("Error retrieving data from database");
+            }
+          }
+          break;
+        case 3: //user chose visayas/mindanao region
+          try {
+            connection = connect.vismin_node.getConnection();
+            node = connect.vismin_node;
+          } catch (err) {
+            try {
+              connection = connect.central_node.getConnection();
+              node = connect.central_node;
+            } catch (err) {
+              console.log(err);
+              res.status(500).send("Error retrieving data from database");
+            }
+          }
+          break;
+        default:
+          try {
+            connection = connect.central_node.getConnection();
+            node = connect.central_node;
+          } catch (err) {
+            console.log(err);
+            res.status(500).send("Error retrieving data from database");
+          }
+      }
+
+      return node;
+    }
+
+    let node;
+    //console.log("Getting data...");
+
+    const sqlstats = `SELECT c.RegionName, c.City, COUNT(1) as "No. of Apointments", a.status
+                        FROM clinics c JOIN appt_main a ON c.clinicid = a.clinicid 
+                        WHERE a.status = ? 
+                        GROUP BY c.RegionName, c.City, a.status WITH ROLLUP
+                        LIMIT 15 OFFSET ${(pageNum - 1) * 15};`
+
+    let result;
+    switch (location) {
+      case "central":
+        node = await connectionReRoute(1);
+        [result] = await connect.dbQuery(node, sqlstats, [status]);
+        break;
+      case "luzon":
+        node = await connectionReRoute(2);
+        [result] = await connect.dbQuery(node, sqlstats, [status]);
+        break;
+      default:
+        node = await connectionReRoute(3);
+        [result] = await connect.dbQuery(node, sqlstats, [status]);
+        break;
+    }
+
+    if (node === connect.central_node) {
+      console.table(result);
+      res.status(200).json({ rows: result });
+    } else {
+      const [result2] = await connect.dbQuery(
+        node === connect.luzon_node ? connect.luzon_node : connect.vismin_node,
+        sqlstats,
+        [status]
       );
 
       console.table(result2);
@@ -168,7 +256,6 @@ const controller = {
           clinicid,
         ]);
         //TODO: check if it gets loc successfully with predicted regions list
-        console.log("I got location:", loc);
 
         switch (loc) {
           case "National Capital Region (NCR)":
@@ -237,7 +324,7 @@ const controller = {
           apptData
         );
         if (master_insertResult) {
-          console.log("Appointment successfully added");
+          //console.log("Appointment successfully added");
           //insert the appointment data into slave node if central is successful
           try {
             const insertResult = await connect.dbQuery(
@@ -246,7 +333,7 @@ const controller = {
               apptData
             );
             if (insertResult) {
-              console.log("Appointment successfully added");
+              //console.log("Appointment successfully added");
               res
                 .status(200)
                 .json({ message: "Successful adding of appointment" });
@@ -269,7 +356,7 @@ const controller = {
   },
 
   getAllNewData: async function (req, res) {
-    console.log("---HERE ALL NEW DATA---");
+    //console.log("---HERE ALL NEW DATA---");
     const location = req.body.region;
 
     let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
@@ -373,13 +460,13 @@ const controller = {
       );
 
       if (master_insertResult) {
-        console.log("INSERT: ", master_insertResult[0][0].count);
+        //console.log("INSERT: ", master_insertResult[0][0].count);
 
         // Insert the appointment data into the database
         const insertResult = await connect.dbQuery(node, sql, []);
 
         if (insertResult) {
-          console.log("INSERT: ", insertResult[0][0].count);
+          //console.log("INSERT: ", insertResult[0][0].count);
           res.status(200).json({ rows: insertResult }).send();
           return;
         }
@@ -405,13 +492,13 @@ const controller = {
       );
 
       if (master_insertResult) {
-        console.log("INSERT: ", master_insertResult[0][0].count);
+        //console.log("INSERT: ", master_insertResult[0][0].count);
 
         // Insert the appointment data into the database
         const insertResult = await connect.dbQuery(node, sql, [status]);
 
         if (insertResult) {
-          console.log("INSERT: ", insertResult[0][0].count);
+          //console.log("INSERT: ", insertResult[0][0].count);
           res.status(200).json({ rows: insertResult }).send();
           return;
         }
@@ -425,7 +512,7 @@ const controller = {
     const insertResult = await connect.dbQuery(node, sql, [status]);
 
     if (insertResult) {
-      console.log("INSERT: ", insertResult[0][0].count);
+      //console.log("INSERT: ", insertResult[0][0].count);
       res.status(200).json({ rows: insertResult }).send();
     }
   },
@@ -439,7 +526,7 @@ const controller = {
   },
 
   editAppointment: async function (req, res) {
-    console.log("--- Editing appointment ---");
+    //console.log("--- Editing appointment ---");
     let location = req.body.region;
     let clinicid = req.body.clinicid;
 
@@ -483,7 +570,6 @@ const controller = {
         clinicid,
       ]);
       //TODO: check if it gets loc successfully with predicted regions list
-      console.log("I got location:", loc);
 
       switch (loc) {
         case "National Capital Region (NCR)":
@@ -511,7 +597,7 @@ const controller = {
       );
 
       if (master_result) {
-        console.log("Appointment successfully updated");
+        //console.log("Appointment successfully updated");
 
         //update subnode
         try {
@@ -521,7 +607,7 @@ const controller = {
             apptData
           );
           if (result) {
-            console.log("Appointment successfully updated");
+            //console.log("Appointment successfully updated");
             res
               .status(200)
               .json({ message: "Appointment successfully updated" });
@@ -538,7 +624,7 @@ const controller = {
   },
 
   searchAppointment: async function (req, res) {
-    console.log("--- Searching appointment ---");
+    //console.log("--- Searching appointment ---");
 
     const location = req.body.region;
 
@@ -556,7 +642,7 @@ const controller = {
       );
 
       if (master_result) {
-        console.log("Appointment searched succesfully");
+        //console.log("Appointment searched succesfully");
         const master_appointments = master_result.map((row) => ({
           pxid: row.pxid,
           clinicid: row.clinicid,
@@ -570,7 +656,7 @@ const controller = {
           Type: row.Type,
           Virtual: row.Virtual,
         }));
-        console.log(master_appointments);
+        //console.log(master_appointments);
         res.status(200).json({ appt: master_appointments });
         return;
       }
@@ -593,7 +679,7 @@ const controller = {
         );
         //transfer to central since subnode failed to get a result
         if (master_result) {
-          console.log("Appointment successfully updated");
+          //console.log("Appointment successfully updated");
           const master_appointments = master_result.map((row) => ({
             pxid: row.pxid,
             clinicid: row.clinicid,
@@ -607,14 +693,14 @@ const controller = {
             Type: row.Type,
             Virtual: row.Virtual,
           }));
-          console.log(appointments);
+          //console.log(appointments);
           res.status(200).json({ appt: master_appointments });
           return;
         }
       }
 
       if (result) {
-        console.log("Appointment searched succesfully");
+        //console.log("Appointment searched succesfully");
         const appointments = result.map((row) => ({
           pxid: row.pxid,
           clinicid: row.clinicid,
@@ -628,7 +714,7 @@ const controller = {
           Type: row.Type,
           Virtual: row.Virtual,
         }));
-        console.log(appointments);
+        //console.log(appointments);
         res.status(200).json({ appt: appointments });
       }
     } catch (err) {
@@ -638,11 +724,10 @@ const controller = {
   },
 
   deleteAppointment: async function (req, res) {
-    console.log("--- Deleting appointment ---");
+    //console.log("--- Deleting appointment ---");
 
     let location = req.body.region;
     let clinicid = req.body.clinicid;
-    console.log("THE CLINIC", clinicid);
 
     const apptids = req.body.json;
 
@@ -654,7 +739,6 @@ const controller = {
         clinicid,
       ]);
       //TODO: check if it gets loc successfully with predicted regions list
-      console.log("I got location:", loc);
 
       switch (loc) {
         case "National Capital Region (NCR)":
@@ -685,8 +769,8 @@ const controller = {
       );
 
       if (master_result) {
-        console.log("Appointment successfully deleted");
-        console.log(master_result);
+        //console.log("Appointment successfully deleted");
+        //console.log(master_result);
 
         try {
           // Update subnode
@@ -697,7 +781,7 @@ const controller = {
           );
 
           if (result) {
-            console.log("Appointment successfully deleted");
+            //console.log("Appointment successfully deleted");
             res
               .status(200)
               .json({ message: "Appointment successfully deleted" });

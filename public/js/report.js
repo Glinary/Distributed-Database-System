@@ -48,8 +48,22 @@ async function checkCount() {
 }
 
 async function fetchData() {
-  const body = { region: regionSelected, status: statusSelected };
+  const body = { region: regionSelected, status: statusSelected, pageNum: pageNum };
   // do query
+
+  const response = await fetch(`/reportstats`, {
+    method: "POST",
+    body: JSON.stringify(body),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (response.status == 200) {
+    let rowsJson = await response.json();
+    const rows = rowsJson.rows;
+    createTable(rows);
+  }
 }
 
 function createTable(rows) {
