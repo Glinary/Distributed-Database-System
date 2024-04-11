@@ -137,7 +137,7 @@ const controller = {
     }
 
     if (node === connect.central_node) {
-      console.table(result);
+      //console.table(result);
       res.status(200).json({ rows: result });
     } else {
       let result2;
@@ -152,7 +152,7 @@ const controller = {
         res.status(500).send("Error in getAllData");
       }
 
-      console.table(result2);
+      //console.table(result2);
       res.status(200).json({ rows: result2 });
     }
   },
@@ -249,7 +249,7 @@ const controller = {
     }
 
     if (node === connect.central_node) {
-      console.table(result);
+      //console.table(result);
       res.status(200).json({ rows: result });
     } else {
       let result2;
@@ -264,7 +264,7 @@ const controller = {
         res.status(500).send("Error in getStats");
       }
 
-      console.table(result2);
+      //console.table(result2);
       res.status(200).json({ rows: result2 });
     }
   },
@@ -741,14 +741,12 @@ const controller = {
     let body = req.body.json;
     const { apptid } = JSON.parse(body);
 
-    let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
-
     //search on central only if user chose all server
     if (location == "central") {
       
       let master_result;
       try {
-        master_result = await connect.dbQuery(
+        [master_result] = await connect.dbQuery(
           connect.central_node,
           `select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "TimeQueued",  DATE_FORMAT(QueueDate, "%M %d, %Y") as "DateQueued", DATE_FORMAT(StartTime, "%l:%i %p") as "StartTime", DATE_FORMAT(EndTime, "%l:%i %p") as "EndTime", type as "Type", appt_main.virtual as "Virtual" FROM appt_main where apptid = ?;`,
           [apptid]
@@ -761,9 +759,10 @@ const controller = {
       } catch (err) {
         console.log(err);
         res.status(500).send("Error in searchAppointment");
-      }
-      
+      } 
     }
+    let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
+
 
     //check if it searches on central node once subnode fails
     try {
@@ -773,7 +772,6 @@ const controller = {
         `select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "TimeQueued",  DATE_FORMAT(QueueDate, "%M %d, %Y") as "DateQueued", DATE_FORMAT(StartTime, "%l:%i %p") as "StartTime", DATE_FORMAT(EndTime, "%l:%i %p") as "EndTime", type as "Type", appt_main.virtual as "Virtual" FROM appt_main where apptid = ?;`,
         [apptid]
       );
-
       if (isEmptyArray([result])) {
         let master_result;
         try {
@@ -809,11 +807,13 @@ const controller = {
 
   deleteAppointment: async function (req, res) {
     //console.log("--- Deleting appointment ---");
-
+    console.log("HAAAAAAAAAAAAAAAAA");
     let location = req.body.region;
     let clinicid = req.body.clinicid;
 
+    console.log("HUUUUUUUU");
     const apptids = req.body.json;
+    console.log("LOCCCHEHEHEHEHEHE:", location);
 
     //TODO: get clinicid of appointment for function to work when server "all" is selected
     //get clinicid to get the region if user chose central ex: ncr

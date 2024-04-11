@@ -146,6 +146,7 @@ async function fetchData() {
     let rowsJson = await response.json();
     const rows = rowsJson.rows;
     createTable(rows);
+    
   }
 }
 
@@ -223,10 +224,10 @@ async function deleteSubmit(event) {
     console.log("SUCCESS");
     const jsonMes = await responseSearch.json();
     const appointment = jsonMes.appt;
-    var clinicid = appointment[0].clinicid;
+    var clinicid = appointment[0][0].clinicid;
   }
 
-  body = { category: category, json, clinicid: clinicid };
+  body = { region: region, category: category, json, clinicid: clinicid };
 
   const response = await fetch(`/deleteAppointment`, {
     method: "POST",
@@ -304,8 +305,9 @@ async function updateSubmit(event) {
 
 async function showUpdate(apptid) {
   console.log(apptid);
-  json = { apptid };
+  json = { apptid, region: region };
   console.log(json);
+  
 
   const response = await fetch(`/searchAppointment`, {
     method: "POST",
@@ -324,6 +326,9 @@ async function showUpdate(apptid) {
     searchSucc = 1;
 
     console.log(table);
+    if (rows[0] == undefined) {
+      return
+    }
     createTable(table);
   }
 }
