@@ -380,7 +380,10 @@ async function searchSubmit(event) {
         timer: 1800,
       });
     } else {
-      changeValues(appointment[0]);
+      console.log("HERE!!");
+      console.log(appointment[0]);
+
+      changeValues(appointment);
       checkPage();
     }
     searchForm.reset();
@@ -447,7 +450,7 @@ function changeValues(appointment) {
     appointment[0].TimeQueued
   );
   document.getElementById("QueueDateU").value = setDate(
-    appointment[0].QueueDate
+    appointment[0].DateQueued
   );
   document.getElementById("StartTimeU").value = setTime(
     appointment[0].StartTime
