@@ -59,7 +59,7 @@ const controller = {
 
     //Search on the chosen node first before querying on central node, then fail if none
     async function connectionReRoute(node_num) {
-      let connection;
+      let connection, node;
       switch (node_num) {
         case 2: //user chose luzon region
           try {
@@ -98,24 +98,27 @@ const controller = {
             res.status(500).send("Error retrieving data from database");
           }
       }
+
+      return node;
     }
 
-    console.log("Getting data...");
     let node;
+    console.log("Getting data...");
 
     const sql = categories[category];
     let result;
     switch (location) {
       case "central":
-        await connectionReRoute(1);
+        node = await connectionReRoute(1);
         [result] = await connect.dbQuery(node, sql, []);
         break;
       case "luzon":
-        await connectionReRoute(2);
+        node = await connectionReRoute(2);
         [result] = await connect.dbQuery(node, sql, []);
+        console.log("NODEEE IS:", node);
         break;
       default:
-        await connectionReRoute(3);
+        node = await connectionReRoute(3);
         [result] = await connect.dbQuery(node, sql, []);
         break;
     }
@@ -125,7 +128,7 @@ const controller = {
       res.status(200).json({ rows: result });
     } else {
       const [result2] = await connect.dbQuery(
-        node === connect.luzon_node ? connect.vismin_node : connect.luzon_node,
+        node === connect.luzon_node ? connect.luzon_node : connect.vismin_node,
         sql,
         []
       );
