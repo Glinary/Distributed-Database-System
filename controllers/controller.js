@@ -98,7 +98,7 @@ const controller = {
 
     const sql = categories[category];
     let result;
-    switch(location) {
+    switch (location) {
       case "central":
         await connectionReRoute(1);
         [result] = await connect.dbQuery(node, sql, []);
@@ -154,11 +154,13 @@ const controller = {
       //get clinicid to get the region if user chose central ex: ncr
       if (location == "central") {
         const sqlGetLoc = `SELECT RegionName FROM clinics WHERE clinicid = ?`;
-        const loc = await connect.dbQuery(connect.central_node, sqlGetLoc, [clinicid]);
+        const loc = await connect.dbQuery(connect.central_node, sqlGetLoc, [
+          clinicid,
+        ]);
         //TODO: check if it gets loc successfully with predicted regions list
         console.log("I got location:", loc);
 
-        switch(loc) {
+        switch (loc) {
           case "National Capital Region (NCR)":
           case "Ilocos Region (I)":
           case "Cagayan Valley (II)":
@@ -174,7 +176,6 @@ const controller = {
             break;
         }
       }
-      
 
       // Determine which database node to use based on location
       const node =
@@ -353,7 +354,7 @@ const controller = {
 
     const sql = `SELECT COUNT(*) as count FROM ${categories[category]};`;
 
-    // if location is central, get data count for central only
+    //if location is central, get data count for central only
     if (location == "central") {
       const master_insertResult = await connect.dbQuery(
         connect.central_node,
@@ -363,18 +364,19 @@ const controller = {
 
       if (master_insertResult) {
         console.log("INSERT: ", master_insertResult[0][0].count);
-  
+
         // Insert the appointment data into the database
         const insertResult = await connect.dbQuery(node, sql, []);
-  
+
         if (insertResult) {
           console.log("INSERT: ", insertResult[0][0].count);
           res.status(200).json({ rows: insertResult }).send();
+          return;
         }
       }
     }
 
-    //TODO: purpose of this function is unclear. 
+    //TODO: purpose of this function is unclear.
     //do you mean if not central, get data from the chosen subnode only?
 
     // read the data from the chosen subnode
@@ -384,7 +386,6 @@ const controller = {
       console.log("INSERT: ", insertResult[0][0].count);
       res.status(200).json({ rows: insertResult }).send();
     }
-    
   },
 
   getDoctors: async function (req, res) {
@@ -435,11 +436,13 @@ const controller = {
     //get clinicid to get the region if user chose central ex: ncr
     if (location == "central") {
       const sqlGetLoc = `SELECT RegionName FROM clinics WHERE clinicid = ?`;
-      const loc = await connect.dbQuery(connect.central_node, sqlGetLoc, [clinicid]);
+      const loc = await connect.dbQuery(connect.central_node, sqlGetLoc, [
+        clinicid,
+      ]);
       //TODO: check if it gets loc successfully with predicted regions list
       console.log("I got location:", loc);
 
-      switch(loc) {
+      switch (loc) {
         case "National Capital Region (NCR)":
         case "Ilocos Region (I)":
         case "Cagayan Valley (II)":
@@ -526,8 +529,8 @@ const controller = {
         }));
         console.log(master_appointments);
         res.status(200).json({ appt: master_appointments });
+        return;
       }
-
     }
 
     //check if it searches on central node once subnode fails
@@ -563,6 +566,7 @@ const controller = {
           }));
           console.log(appointments);
           res.status(200).json({ appt: master_appointments });
+          return;
         }
       }
 
@@ -594,6 +598,8 @@ const controller = {
     console.log("--- Deleting appointment ---");
 
     let location = req.body.region;
+    let clinicid = req.body.clinicid;
+    console.log("THE CLINIC", clinicid);
 
     const apptids = req.body.json;
 
@@ -601,11 +607,13 @@ const controller = {
     //get clinicid to get the region if user chose central ex: ncr
     if (location == "central") {
       const sqlGetLoc = `SELECT RegionName FROM clinics WHERE clinicid = ?`;
-      const loc = await connect.dbQuery(connect.central_node, sqlGetLoc, [clinicid]);
+      const loc = await connect.dbQuery(connect.central_node, sqlGetLoc, [
+        clinicid,
+      ]);
       //TODO: check if it gets loc successfully with predicted regions list
       console.log("I got location:", loc);
 
-      switch(loc) {
+      switch (loc) {
         case "National Capital Region (NCR)":
         case "Ilocos Region (I)":
         case "Cagayan Valley (II)":
@@ -635,6 +643,7 @@ const controller = {
 
       if (master_result) {
         console.log("Appointment successfully deleted");
+        console.log(master_result);
 
         try {
           // Update subnode
