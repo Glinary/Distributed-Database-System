@@ -14,7 +14,7 @@ app.use("/static", express.static("public"));
 app.engine("hbs", exphbs.engine({ extname: "hbs" }));
 app.set("view engine", "hbs"); // set express' default templating engine
 app.set("views", "./views");
-app.set('trust proxy', 1)
+
 //user bodyParser
 app.use(bodyParser.json());
 
