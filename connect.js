@@ -180,7 +180,7 @@ async function dbQuery(pool, query, content, callback) {
     if (process.env.NODE_NUM_CONFIGURATION != 1 && query_type != "SELECT")
       await storeQuery(pool, query, content);
 
-    callback(err);
+    //callback(err);
 
     throw err;
   } finally {

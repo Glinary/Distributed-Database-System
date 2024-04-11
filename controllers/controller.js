@@ -109,15 +109,30 @@ const controller = {
     switch (location) {
       case "central":
         node = await connectionReRoute(1);
-        [result] = await connect.dbQuery(node, sql, []);
+        try {
+          [result] = await connect.dbQuery(node, sql, []);
+        } catch (err) {
+          console.log(err);
+          res.status(500).send("Error in getAllData from Central");
+        }
         break;
       case "luzon":
         node = await connectionReRoute(2);
-        [result] = await connect.dbQuery(node, sql, []);
+        try {
+          [result] = await connect.dbQuery(node, sql, []);
+        } catch (err) {
+          console.log(err);
+          res.status(500).send("Error in getAllData from Luzon");
+        }
         break;
       default:
         node = await connectionReRoute(3);
-        [result] = await connect.dbQuery(node, sql, []);
+        try {
+          [result] = await connect.dbQuery(node, sql, []);
+        } catch (err) {
+          console.log(err);
+          res.status(500).send("Error in getAllData from VisMin");
+        }
         break;
     }
 
@@ -125,11 +140,17 @@ const controller = {
       console.table(result);
       res.status(200).json({ rows: result });
     } else {
-      const [result2] = await connect.dbQuery(
-        node === connect.luzon_node ? connect.luzon_node : connect.vismin_node,
-        sql,
-        []
-      );
+      let result2;
+      try {
+        [result2] = await connect.dbQuery(
+          node === connect.luzon_node ? connect.luzon_node : connect.vismin_node,
+          sql,
+          []
+        );
+      } catch (err) {
+        console.log(err);
+        res.status(500).send("Error in getAllData");
+      }
 
       console.table(result2);
       res.status(200).json({ rows: result2 });
@@ -199,15 +220,31 @@ const controller = {
     switch (location) {
       case "central":
         node = await connectionReRoute(1);
-        [result] = await connect.dbQuery(node, sqlstats, [status]);
+        try {
+          [result] = await connect.dbQuery(node, sqlstats, [status]);
+        } catch (err) {
+          console.log(err);
+          res.status(500).send("Error in getStats from Central");
+        }
         break;
       case "luzon":
         node = await connectionReRoute(2);
-        [result] = await connect.dbQuery(node, sqlstats, [status]);
+        try {
+          [result] = await connect.dbQuery(node, sqlstats, [status]);
+        } catch (err) {
+          console.log(err);
+          res.status(500).send("Error in getStats from Luzon");
+        }    
         break;
       default:
         node = await connectionReRoute(3);
-        [result] = await connect.dbQuery(node, sqlstats, [status]);
+        try {
+          [result] = await connect.dbQuery(node, sqlstats, [status]);
+        } catch (err) {
+          console.log(err);
+          res.status(500).send("Error in getStats from VisMin");
+        }
+        
         break;
     }
 
@@ -215,11 +252,17 @@ const controller = {
       console.table(result);
       res.status(200).json({ rows: result });
     } else {
-      const [result2] = await connect.dbQuery(
-        node === connect.luzon_node ? connect.luzon_node : connect.vismin_node,
-        sqlstats,
-        [status]
-      );
+      let result2;
+      try {
+        [result2] = await connect.dbQuery(
+          node === connect.luzon_node ? connect.luzon_node : connect.vismin_node,
+          sqlstats,
+          [status]
+        );
+      } catch (err) {
+        console.log(err);
+        res.status(500).send("Error in getStats");
+      }
 
       console.table(result2);
       res.status(200).json({ rows: result2 });
@@ -252,10 +295,15 @@ const controller = {
       //get clinicid to get the region if user chose central ex: ncr
       if (location == "central") {
         const sqlGetLoc = `SELECT RegionName FROM clinics WHERE clinicid = ?`;
-        const loc = await connect.dbQuery(connect.central_node, sqlGetLoc, [
-          clinicid,
-        ]);
-        //TODO: check if it gets loc successfully with predicted regions list
+        let loc;
+        try {
+          loc = await connect.dbQuery(connect.central_node, sqlGetLoc, [
+            clinicid,
+          ]);
+        } catch (err) {
+          console.log(err);
+          res.status(500).send("Error in postAppointment");
+        }
 
         switch (loc) {
           case "National Capital Region (NCR)":
@@ -282,7 +330,14 @@ const controller = {
       const sqlLastId = `SELECT apptid as keyid FROM appt_main ORDER BY apptid DESC LIMIT 1`;
 
       // Retrieve the last inserted ID from the appt_main table
-      const result1 = await connect.dbQuery(node, sqlLastId, []);
+      let result1;
+      try {
+        result1 = await connect.dbQuery(node, sqlLastId, []);
+      } catch (err) {
+        console.log(err);
+        res.status(500).send("Error in postAppointment");
+      }
+      
       let nextID;
 
       if (result1 && result1.length > 0) {
@@ -365,11 +420,17 @@ const controller = {
 
     // if central skip the rest of the functions
     if (location == "central") {
-      const [master_result] = await connect.dbQuery(
-        connect.central_node,
-        sql,
-        []
-      );
+      let master_result;
+      try {
+        [master_result] = await connect.dbQuery(
+          connect.central_node,
+          sql,
+          []
+        );
+      } catch (err) {
+        console.log(err);
+        res.status(500).send("Error in getAllNewData");
+      }
       const master_latestRecords = master_result.map((row) => ({
         pxid: row.pxid,
         clinicid: row.clinicid,
@@ -389,31 +450,44 @@ const controller = {
     }
 
     //if priority node is not central, proceed to query on priority subnode
-    const [result] = await connect.dbQuery(node, sql, []);
+    let result;
+    try {
+      [result] = await connect.dbQuery(node, sql, []);
+    } catch (err) {
+      console.log(err);
+      res.status(500).send("Error in getAllNewData");
+    }
     if (isEmptyArray([result])) {
-      const [master_result] = await connect.dbQuery(
-        connect.central_node,
-        sql,
-        []
-      );
-
-      //since priority subnode does not have a single result, query on central
-      const master_latestRecords = master_result.map((row) => ({
-        pxid: row.pxid,
-        clinicid: row.clinicid,
-        doctorid: row.doctorid,
-        apptid: row.apptid,
-        status: row.status,
-        TimeQueued: row.TimeQueued,
-        QueueDate: row.DateQueued,
-        StartTime: row.StartTime,
-        EndTime: row.EndTime,
-        Virtual: row.Virtual,
-      }));
-
-      if (master_result) {
-        res.status(200).json({ rows: master_latestRecords }).send();
+      let master_result;
+      try {
+        [master_result] = await connect.dbQuery(
+          connect.central_node,
+          sql,
+          []
+        );
+  
+        //since priority subnode does not have a single result, query on central
+        const master_latestRecords = master_result.map((row) => ({
+          pxid: row.pxid,
+          clinicid: row.clinicid,
+          doctorid: row.doctorid,
+          apptid: row.apptid,
+          status: row.status,
+          TimeQueued: row.TimeQueued,
+          QueueDate: row.DateQueued,
+          StartTime: row.StartTime,
+          EndTime: row.EndTime,
+          Virtual: row.Virtual,
+        }));
+  
+        if (master_result) {
+          res.status(200).json({ rows: master_latestRecords }).send();
+        }
+      } catch (err) {
+        console.log(err);
+        res.status(500).send("Error in getAllNewData");
       }
+      
     }
 
     //since priority subnode has a single result, display it
@@ -453,24 +527,31 @@ const controller = {
 
     //if location is central, get data count for central only
     if (location == "central") {
-      const master_insertResult = await connect.dbQuery(
-        connect.central_node,
-        sql,
-        []
-      );
-
-      if (master_insertResult) {
-        //console.log("INSERT: ", master_insertResult[0][0].count);
-
-        // Insert the appointment data into the database
-        const insertResult = await connect.dbQuery(node, sql, []);
-
-        if (insertResult) {
-          //console.log("INSERT: ", insertResult[0][0].count);
-          res.status(200).json({ rows: insertResult }).send();
-          return;
+      let master_insertResult;
+      try {
+        master_insertResult = await connect.dbQuery(
+          connect.central_node,
+          sql,
+          []
+        );
+  
+        if (master_insertResult) {
+          //console.log("INSERT: ", master_insertResult[0][0].count);
+  
+          // Insert the appointment data into the database
+          const insertResult = await connect.dbQuery(node, sql, []);
+  
+          if (insertResult) {
+            //console.log("INSERT: ", insertResult[0][0].count);
+            res.status(200).json({ rows: insertResult }).send();
+            return;
+          }
         }
+      } catch (err) {
+        console.log(err);
+        res.status(500).send("Error in getDataCount");
       }
+      
     }
   },
 
@@ -485,36 +566,55 @@ const controller = {
 
     //if location is central, get data count for central only
     if (location == "central") {
-      const master_insertResult = await connect.dbQuery(
-        connect.central_node,
-        sql,
-        [status]
-      );
-
-      if (master_insertResult) {
-        //console.log("INSERT: ", master_insertResult[0][0].count);
-
-        // Insert the appointment data into the database
-        const insertResult = await connect.dbQuery(node, sql, [status]);
-
-        if (insertResult) {
-          //console.log("INSERT: ", insertResult[0][0].count);
-          res.status(200).json({ rows: insertResult }).send();
-          return;
+      let master_insertResult;
+      try {
+        master_insertResult = await connect.dbQuery(
+          connect.central_node,
+          sql,
+          [status]
+        );
+  
+        if (master_insertResult) {
+          //console.log("INSERT: ", master_insertResult[0][0].count);
+  
+          // Insert the appointment data into the database
+          let insertResult
+          try {
+            insertResult = await connect.dbQuery(node, sql, [status]);
+  
+            if (insertResult) {
+              //console.log("INSERT: ", insertResult[0][0].count);
+              res.status(200).json({ rows: insertResult }).send();
+              return;
+            }
+          } catch (err) {
+            console.log(err);
+            res.status(500).send("Error in getDataCountReport");
+          }
         }
+      } catch (err) {
+        res.status(500).send("Error in getDataCountReport");
       }
+      
     }
 
     //TODO: purpose of this function is unclear.
     //do you mean if not central, get data from the chosen subnode only?
 
     // read the data from the chosen subnode
-    const insertResult = await connect.dbQuery(node, sql, [status]);
+    let insertResult;
+    try {
+      insertResult = await connect.dbQuery(node, sql, [status]);
 
-    if (insertResult) {
-      //console.log("INSERT: ", insertResult[0][0].count);
-      res.status(200).json({ rows: insertResult }).send();
+      if (insertResult) {
+        //console.log("INSERT: ", insertResult[0][0].count);
+        res.status(200).json({ rows: insertResult }).send();
+      }
+    } catch (err) {
+      console.log(err);
+      res.status(500).send("Error in insertResult");
     }
+    
   },
 
   getDoctors: async function (req, res) {
@@ -566,26 +666,33 @@ const controller = {
     //get clinicid to get the region if user chose central ex: ncr
     if (location == "central") {
       const sqlGetLoc = `SELECT RegionName FROM clinics WHERE clinicid = ?`;
-      const loc = await connect.dbQuery(connect.central_node, sqlGetLoc, [
-        clinicid,
-      ]);
-      //TODO: check if it gets loc successfully with predicted regions list
-
-      switch (loc) {
-        case "National Capital Region (NCR)":
-        case "Ilocos Region (I)":
-        case "Cagayan Valley (II)":
-        case "Central Luzon (III)":
-        case "CALABARZON (IV-A)":
-        case "MIMAROPA (IV-B)":
-        case "Bicol Region (V)":
-        case "Cordillera Administrative Region (CAR)":
-          location = "luzon";
-          break;
-        default:
-          location = "vismin";
-          break;
+      let loc;
+      try {
+        const loc = await connect.dbQuery(connect.central_node, sqlGetLoc, [
+          clinicid,
+        ]);
+        //TODO: check if it gets loc successfully with predicted regions list
+  
+        switch (loc) {
+          case "National Capital Region (NCR)":
+          case "Ilocos Region (I)":
+          case "Cagayan Valley (II)":
+          case "Central Luzon (III)":
+          case "CALABARZON (IV-A)":
+          case "MIMAROPA (IV-B)":
+          case "Bicol Region (V)":
+          case "Cordillera Administrative Region (CAR)":
+            location = "luzon";
+            break;
+          default:
+            location = "vismin";
+            break;
+        }
+      } catch (err) {
+        console.log(err);
+        res.status(500).send("Error in editAppointment");
       }
+      
     }
 
     // update central node first
@@ -635,51 +742,16 @@ const controller = {
 
     //search on central only if user chose all server
     if (location == "central") {
-      const [master_result] = await connect.dbQuery(
-        connect.central_node,
-        `select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "TimeQueued",  DATE_FORMAT(QueueDate, "%M %d, %Y") as "DateQueued", DATE_FORMAT(StartTime, "%l:%i %p") as "StartTime", DATE_FORMAT(EndTime, "%l:%i %p") as "EndTime", type as "Type", appt_main.virtual as "Virtual" FROM appt_main where apptid = ?;`,
-        [apptid]
-      );
-
-      if (master_result) {
-        //console.log("Appointment searched succesfully");
-        const master_appointments = master_result.map((row) => ({
-          pxid: row.pxid,
-          clinicid: row.clinicid,
-          doctorid: row.doctorid,
-          apptid: row.apptid,
-          status: row.status,
-          TimeQueued: row.TimeQueued,
-          QueueDate: row.DateQueued,
-          StartTime: row.StartTime,
-          EndTime: row.EndTime,
-          Type: row.Type,
-          Virtual: row.Virtual,
-        }));
-        //console.log(master_appointments);
-        res.status(200).json({ appt: master_appointments });
-        return;
-      }
-    }
-
-    //check if it searches on central node once subnode fails
-    try {
-      // search subnode first
-      const [result] = await connect.dbQuery(
-        node,
-        `select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "TimeQueued",  DATE_FORMAT(QueueDate, "%M %d, %Y") as "DateQueued", DATE_FORMAT(StartTime, "%l:%i %p") as "StartTime", DATE_FORMAT(EndTime, "%l:%i %p") as "EndTime", type as "Type", appt_main.virtual as "Virtual" FROM appt_main where apptid = ?;`,
-        [apptid]
-      );
-
-      if (isEmptyArray([result])) {
-        const [master_result] = await connect.dbQuery(
+      let master_result;
+      try {
+        [master_result] = await connect.dbQuery(
           connect.central_node,
           `select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "TimeQueued",  DATE_FORMAT(QueueDate, "%M %d, %Y") as "DateQueued", DATE_FORMAT(StartTime, "%l:%i %p") as "StartTime", DATE_FORMAT(EndTime, "%l:%i %p") as "EndTime", type as "Type", appt_main.virtual as "Virtual" FROM appt_main where apptid = ?;`,
           [apptid]
         );
-        //transfer to central since subnode failed to get a result
+  
         if (master_result) {
-          //console.log("Appointment successfully updated");
+          //console.log("Appointment searched succesfully");
           const master_appointments = master_result.map((row) => ({
             pxid: row.pxid,
             clinicid: row.clinicid,
@@ -693,10 +765,59 @@ const controller = {
             Type: row.Type,
             Virtual: row.Virtual,
           }));
-          //console.log(appointments);
+          //console.log(master_appointments);
           res.status(200).json({ appt: master_appointments });
           return;
         }
+      } catch (err) {
+        console.log(err);
+        res.status(500).send("Error in searchAppointment");
+      }
+      
+    }
+
+    //check if it searches on central node once subnode fails
+    try {
+      // search subnode first
+      const [result] = await connect.dbQuery(
+        node,
+        `select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "TimeQueued",  DATE_FORMAT(QueueDate, "%M %d, %Y") as "DateQueued", DATE_FORMAT(StartTime, "%l:%i %p") as "StartTime", DATE_FORMAT(EndTime, "%l:%i %p") as "EndTime", type as "Type", appt_main.virtual as "Virtual" FROM appt_main where apptid = ?;`,
+        [apptid]
+      );
+
+      if (isEmptyArray([result])) {
+        let master_result;
+        try {
+          [master_result] = await connect.dbQuery(
+            connect.central_node,
+            `select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "TimeQueued",  DATE_FORMAT(QueueDate, "%M %d, %Y") as "DateQueued", DATE_FORMAT(StartTime, "%l:%i %p") as "StartTime", DATE_FORMAT(EndTime, "%l:%i %p") as "EndTime", type as "Type", appt_main.virtual as "Virtual" FROM appt_main where apptid = ?;`,
+            [apptid]
+          );
+          //transfer to central since subnode failed to get a result
+          if (master_result) {
+            //console.log("Appointment successfully updated");
+            const master_appointments = master_result.map((row) => ({
+              pxid: row.pxid,
+              clinicid: row.clinicid,
+              doctorid: row.doctorid,
+              apptid: row.apptid,
+              status: row.status,
+              TimeQueued: row.TimeQueued,
+              QueueDate: row.DateQueued,
+              StartTime: row.StartTime,
+              EndTime: row.EndTime,
+              Type: row.Type,
+              Virtual: row.Virtual,
+            }));
+            //console.log(appointments);
+            res.status(200).json({ appt: master_appointments });
+            return;
+          }
+        } catch (err) {
+          console.log(err);
+          res.status(500).send("Error in searchAppointment");
+        }
+        
       }
 
       if (result) {
@@ -735,26 +856,32 @@ const controller = {
     //get clinicid to get the region if user chose central ex: ncr
     if (location == "central") {
       const sqlGetLoc = `SELECT RegionName FROM clinics WHERE clinicid = ?`;
-      const loc = await connect.dbQuery(connect.central_node, sqlGetLoc, [
-        clinicid,
-      ]);
-      //TODO: check if it gets loc successfully with predicted regions list
-
-      switch (loc) {
-        case "National Capital Region (NCR)":
-        case "Ilocos Region (I)":
-        case "Cagayan Valley (II)":
-        case "Central Luzon (III)":
-        case "CALABARZON (IV-A)":
-        case "MIMAROPA (IV-B)":
-        case "Bicol Region (V)":
-        case "Cordillera Administrative Region (CAR)":
-          location = "luzon";
-          break;
-        default:
-          location = "vismin";
-          break;
+      let loc;
+      try {
+        loc = await connect.dbQuery(connect.central_node, sqlGetLoc, [
+          clinicid,
+        ]);
+  
+        switch (loc) {
+          case "National Capital Region (NCR)":
+          case "Ilocos Region (I)":
+          case "Cagayan Valley (II)":
+          case "Central Luzon (III)":
+          case "CALABARZON (IV-A)":
+          case "MIMAROPA (IV-B)":
+          case "Bicol Region (V)":
+          case "Cordillera Administrative Region (CAR)":
+            location = "luzon";
+            break;
+          default:
+            location = "vismin";
+            break;
+        }
+      } catch (err) {
+        console.log(err);
+        res.status(500).send("Error in deleteAppointment");
       }
+      
     }
     const { apptid } = JSON.parse(apptids);
 
