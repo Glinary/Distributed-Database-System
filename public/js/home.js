@@ -279,7 +279,6 @@ async function updateSubmit(event) {
     headers: {
       "Content-Type": "application/json",
     },
-    credentials: "include",
   });
 
   if (response.status == 200) {
@@ -346,15 +345,12 @@ async function searchSubmit(event) {
     headers: {
       "Content-Type": "application/json",
     },
-    credentials: "include",
   });
 
   if (response.status == 200) {
     console.log("SUCCESS");
     const jsonMes = await response.json();
-    console.log("JSONMES:", jsonMes);
     const appointment = jsonMes.appt;
-    console.log("APPOINTMENT:", appointment);
     searchSucc = 1;
 
     console.log(appointment[0]);
