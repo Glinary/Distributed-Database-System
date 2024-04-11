@@ -223,33 +223,43 @@ async function deleteSubmit(event) {
     console.log("SUCCESS");
     const jsonMes = await responseSearch.json();
     const appointment = jsonMes.appt;
-    var clinicid = appointment[0].clinicid;
-  }
 
-  body = { category: category, json, clinicid: clinicid };
+    if (appointment[0] == undefined) {
+      Swal.fire({
+        position: "center",
+        icon: "error",
+        title: "record does not exist",
+        showConfirmButton: false,
+        timer: 1800,
+      });
+    } else {
+      var clinicid = appointment[0].clinicid;
+      body = { region: region, category: category, json, clinicid: clinicid };
 
-  const response = await fetch(`/deleteAppointment`, {
-    method: "POST",
-    body: JSON.stringify(body),
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
+      const response = await fetch(`/deleteAppointment`, {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
-  if (response.status == 200) {
-    console.log("SUCCESS");
-    const jsonMes = await response.json();
-    const message = jsonMes.message;
+      if (response.status == 200) {
+        console.log("SUCCESS");
+        const jsonMes = await response.json();
+        const message = jsonMes.message;
 
-    Swal.fire({
-      position: "center",
-      icon: "success",
-      title: message,
-      showConfirmButton: false,
-      timer: 1800,
-    });
-    deleteForm.reset();
-    onload();
+        Swal.fire({
+          position: "center",
+          icon: "success",
+          title: message,
+          showConfirmButton: false,
+          timer: 1800,
+        });
+        deleteForm.reset();
+        onload();
+      }
+    }
   }
 }
 
@@ -304,7 +314,7 @@ async function updateSubmit(event) {
 
 async function showUpdate(apptid) {
   console.log(apptid);
-  json = { apptid };
+  json = { apptid, region: region };
   console.log(json);
 
   const response = await fetch(`/searchAppointment`, {
@@ -360,8 +370,22 @@ async function searchSubmit(event) {
 
     console.log(appointment[0]);
     console.log("YOU PRESSED ON SEARCH SUBMIT");
-    changeValues(appointment[0]);
-    checkPage();
+
+    if (appointment[0] == undefined) {
+      Swal.fire({
+        position: "center",
+        icon: "error",
+        title: "record does not exist",
+        showConfirmButton: false,
+        timer: 1800,
+      });
+    } else {
+      console.log("HERE!!");
+      console.log(appointment[0]);
+
+      changeValues(appointment);
+      checkPage();
+    }
     searchForm.reset();
   }
 }
@@ -400,6 +424,9 @@ async function gensearchSubmit(event) {
 
     console.log(table);
     searchForm.reset();
+
+    console.log(table[0]);
+
     createTable(table);
   }
 }
@@ -423,7 +450,7 @@ function changeValues(appointment) {
     appointment[0].TimeQueued
   );
   document.getElementById("QueueDateU").value = setDate(
-    appointment[0].QueueDate
+    appointment[0].DateQueued
   );
   document.getElementById("StartTimeU").value = setTime(
     appointment[0].StartTime
@@ -510,30 +537,37 @@ regElement.addEventListener("change", (event) => {
 });
 
 function createTable(rows) {
-  const table = document.createElement("table");
-  const headers = Object.keys(rows[0]);
+  console.log(rows);
+  if (rows[0] != undefined) {
+    const table = document.createElement("table");
+    const headers = Object.keys(rows[0]);
 
-  // Create table headers
-  const headerRow = table.insertRow();
-  headers.forEach((header) => {
-    const th = document.createElement("th");
-    th.textContent = header;
-    headerRow.appendChild(th);
-  });
-
-  // Create table rows with data
-  rows.forEach((rowData) => {
-    const row = table.insertRow();
+    // Create table headers
+    const headerRow = table.insertRow();
     headers.forEach((header) => {
-      const cell = row.insertCell();
-      cell.textContent = rowData[header];
+      const th = document.createElement("th");
+      th.textContent = header;
+      headerRow.appendChild(th);
     });
-  });
 
-  // Append table to a container in the HTML document
-  const tableContainer = document.getElementById("table-container");
-  tableContainer.innerHTML = ""; // Clear previous content
-  tableContainer.appendChild(table);
+    // Create table rows with data
+    rows.forEach((rowData) => {
+      const row = table.insertRow();
+      headers.forEach((header) => {
+        const cell = row.insertCell();
+        cell.textContent = rowData[header];
+      });
+    });
+
+    // Append table to a container in the HTML document
+    const tableContainer = document.getElementById("table-container");
+    tableContainer.innerHTML = ""; // Clear previous content
+    tableContainer.appendChild(table);
+  } else {
+    const element = document.querySelector("table");
+
+    element.remove();
+  }
 }
 
 nextButton.addEventListener("click", () => {
@@ -547,5 +581,6 @@ prevButton.addEventListener("click", () => {
   if (pageNum > 1) {
     pageNum--;
   }
+
   onload();
 });

@@ -137,13 +137,15 @@ const controller = {
     }
 
     if (node === connect.central_node) {
-      console.table(result);
+      //console.table(result);
       res.status(200).json({ rows: result });
     } else {
       let result2;
       try {
         [result2] = await connect.dbQuery(
-          node === connect.luzon_node ? connect.luzon_node : connect.vismin_node,
+          node === connect.luzon_node
+            ? connect.luzon_node
+            : connect.vismin_node,
           sql,
           []
         );
@@ -152,7 +154,7 @@ const controller = {
         res.status(500).send("Error in getAllData");
       }
 
-      console.table(result2);
+      //console.table(result2);
       res.status(200).json({ rows: result2 });
     }
   },
@@ -214,7 +216,7 @@ const controller = {
                         FROM clinics c JOIN appt_main a ON c.clinicid = a.clinicid 
                         WHERE a.status = ? 
                         GROUP BY c.RegionName, c.City, a.status WITH ROLLUP
-                        LIMIT 15 OFFSET ${(pageNum - 1) * 15};`
+                        LIMIT 15 OFFSET ${(pageNum - 1) * 15};`;
 
     let result;
     switch (location) {
@@ -234,7 +236,7 @@ const controller = {
         } catch (err) {
           console.log(err);
           res.status(500).send("Error in getStats from Luzon");
-        }    
+        }
         break;
       default:
         node = await connectionReRoute(3);
@@ -244,18 +246,20 @@ const controller = {
           console.log(err);
           res.status(500).send("Error in getStats from VisMin");
         }
-        
+
         break;
     }
 
     if (node === connect.central_node) {
-      console.table(result);
+      //console.table(result);
       res.status(200).json({ rows: result });
     } else {
       let result2;
       try {
         [result2] = await connect.dbQuery(
-          node === connect.luzon_node ? connect.luzon_node : connect.vismin_node,
+          node === connect.luzon_node
+            ? connect.luzon_node
+            : connect.vismin_node,
           sqlstats,
           [status]
         );
@@ -264,7 +268,7 @@ const controller = {
         res.status(500).send("Error in getStats");
       }
 
-      console.table(result2);
+      //console.table(result2);
       res.status(200).json({ rows: result2 });
     }
   },
@@ -338,7 +342,7 @@ const controller = {
         console.log(err);
         res.status(500).send("Error in postAppointment");
       }
-      
+
       let nextID;
 
       if (result1 && result1.length > 0) {
@@ -423,11 +427,7 @@ const controller = {
     if (location == "central") {
       let master_result;
       try {
-        [master_result] = await connect.dbQuery(
-          connect.central_node,
-          sql,
-          []
-        );
+        [master_result] = await connect.dbQuery(connect.central_node, sql, []);
       } catch (err) {
         console.log(err);
         res.status(500).send("Error in getAllNewData");
@@ -462,12 +462,8 @@ const controller = {
     if (isEmptyArray([result])) {
       let master_result;
       try {
-        [master_result] = await connect.dbQuery(
-          connect.central_node,
-          sql,
-          []
-        );
-  
+        [master_result] = await connect.dbQuery(connect.central_node, sql, []);
+
         //since priority subnode does not have a single result, query on central
         const master_latestRecords = master_result.map((row) => ({
           pxid: row.pxid,
@@ -481,7 +477,7 @@ const controller = {
           EndTime: row.EndTime,
           Virtual: row.Virtual,
         }));
-  
+
         if (master_result) {
           res.status(200).json({ rows: master_latestRecords }).send();
           return;
@@ -490,7 +486,6 @@ const controller = {
         console.log(err);
         res.status(500).send("Error in getAllNewData");
       }
-      
     }
 
     //since priority subnode has a single result, display it
@@ -537,13 +532,13 @@ const controller = {
           sql,
           []
         );
-  
+
         if (master_insertResult) {
           //console.log("INSERT: ", master_insertResult[0][0].count);
-  
+
           // Insert the appointment data into the database
           const insertResult = await connect.dbQuery(node, sql, []);
-  
+
           if (insertResult) {
             //console.log("INSERT: ", insertResult[0][0].count);
             res.status(200).json({ rows: insertResult }).send();
@@ -554,7 +549,6 @@ const controller = {
         console.log(err);
         res.status(500).send("Error in getDataCount");
       }
-      
     }
   },
 
@@ -571,20 +565,18 @@ const controller = {
     if (location == "central") {
       let master_insertResult;
       try {
-        master_insertResult = await connect.dbQuery(
-          connect.central_node,
-          sql,
-          [status]
-        );
-  
+        master_insertResult = await connect.dbQuery(connect.central_node, sql, [
+          status,
+        ]);
+
         if (master_insertResult) {
           //console.log("INSERT: ", master_insertResult[0][0].count);
-  
+
           // Insert the appointment data into the database
-          let insertResult
+          let insertResult;
           try {
             insertResult = await connect.dbQuery(node, sql, [status]);
-  
+
             if (insertResult) {
               //console.log("INSERT: ", insertResult[0][0].count);
               res.status(200).json({ rows: insertResult }).send();
@@ -598,7 +590,6 @@ const controller = {
       } catch (err) {
         res.status(500).send("Error in getDataCountReport");
       }
-      
     }
 
     //TODO: purpose of this function is unclear.
@@ -617,7 +608,6 @@ const controller = {
       console.log(err);
       res.status(500).send("Error in insertResult");
     }
-    
   },
 
   getDoctors: async function (req, res) {
@@ -642,7 +632,7 @@ const controller = {
       EndTime,
       type,
       virtual,
-      clinicid
+      clinicid,
     } = JSON.parse(jsonData);
 
     // Format date and time values
@@ -690,11 +680,8 @@ const controller = {
         console.log(err);
         res.status(500).send("Error in editAppointment");
       }
-      
     }
     let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
-
-
 
     // update central node first
     try {
@@ -707,7 +694,7 @@ const controller = {
       if (master_result) {
         //console.log("Appointment successfully updated");
         //res.status(200).json({message: "Appointment successfully updated"});
-        
+
         //update subnode
         try {
           const result = await connect.dbQuery(
@@ -720,7 +707,7 @@ const controller = {
             res
               .status(200)
               .json({ message: "Appointment successfully updated" });
-              return;
+            return;
           }
         } catch (err) {
           console.log(err);
@@ -741,29 +728,27 @@ const controller = {
     let body = req.body.json;
     const { apptid } = JSON.parse(body);
 
-    let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
-
     //search on central only if user chose all server
     if (location == "central") {
-      
       let master_result;
       try {
-        master_result = await connect.dbQuery(
+        [master_result] = await connect.dbQuery(
           connect.central_node,
           `select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "TimeQueued",  DATE_FORMAT(QueueDate, "%M %d, %Y") as "DateQueued", DATE_FORMAT(StartTime, "%l:%i %p") as "StartTime", DATE_FORMAT(EndTime, "%l:%i %p") as "EndTime", type as "Type", appt_main.virtual as "Virtual" FROM appt_main where apptid = ?;`,
           [apptid]
         );
-  
+
         if (master_result) {
-          res.status(200).json({ appt: master_result});
+          console.log(master_result);
+          res.status(200).json({ appt: master_result });
           return;
         }
       } catch (err) {
         console.log(err);
         res.status(500).send("Error in searchAppointment");
       }
-      
     }
+    let node = location == "luzon" ? connect.luzon_node : connect.vismin_node;
 
     //check if it searches on central node once subnode fails
     try {
@@ -773,7 +758,6 @@ const controller = {
         `select pxid, clinicid, doctorid, apptid, status, DATE_FORMAT(TimeQueued, "%l:%i %p") as "TimeQueued",  DATE_FORMAT(QueueDate, "%M %d, %Y") as "DateQueued", DATE_FORMAT(StartTime, "%l:%i %p") as "StartTime", DATE_FORMAT(EndTime, "%l:%i %p") as "EndTime", type as "Type", appt_main.virtual as "Virtual" FROM appt_main where apptid = ?;`,
         [apptid]
       );
-
       if (isEmptyArray([result])) {
         let master_result;
         try {
@@ -785,7 +769,7 @@ const controller = {
           //transfer to central since subnode failed to get a result
           if (master_result) {
             //console.log("Appointment successfully updated");
-            
+
             res.status(200).json({ appt: master_result });
             return;
           }
@@ -793,7 +777,6 @@ const controller = {
           console.log(err);
           res.status(500).send("Error in searchAppointment");
         }
-        
       }
 
       if (result) {
@@ -809,11 +792,13 @@ const controller = {
 
   deleteAppointment: async function (req, res) {
     //console.log("--- Deleting appointment ---");
-
+    console.log("HAAAAAAAAAAAAAAAAA");
     let location = req.body.region;
     let clinicid = req.body.clinicid;
 
+    console.log("HUUUUUUUU");
     const apptids = req.body.json;
+    console.log("LOCCCHEHEHEHEHEHE:", location);
 
     //TODO: get clinicid of appointment for function to work when server "all" is selected
     //get clinicid to get the region if user chose central ex: ncr
@@ -824,7 +809,7 @@ const controller = {
         loc = await connect.dbQuery(connect.central_node, sqlGetLoc, [
           clinicid,
         ]);
-  
+
         switch (loc[0][0].RegionName) {
           case "National Capital Region (NCR)":
           case "Ilocos Region (I)":
@@ -844,7 +829,6 @@ const controller = {
         console.log(err);
         res.status(500).send("Error in deleteAppointment");
       }
-      
     }
     const { apptid } = JSON.parse(apptids);
 
