@@ -16,5 +16,6 @@ router.post("/searchAppointment", controller.searchAppointment);
 router.get("/doctors", controller.getHome);
 router.get("/clinics", controller.getHome);
 router.get("/patients", controller.getHome);
+router.get("/report", controller.getReport);
 
 export default router;

@@ -209,8 +209,22 @@ async function deleteSubmit(event) {
 
   body = { category: category, json, region: region };
 
-  console.log("TO STORE");
-  console.log(json);
+  const responseSearch = await fetch(`/searchAppointment`, {
+    method: "POST",
+    body: JSON.stringify(body),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (responseSearch.status == 200) {
+    console.log("SUCCESS");
+    const jsonMes = await responseSearch.json();
+    const appointment = jsonMes.appt;
+    var clinicid = appointment[0].clinicid;
+  }
+
+  body = { category: category, json, clinicid: clinicid };
 
   const response = await fetch(`/deleteAppointment`, {
     method: "POST",
