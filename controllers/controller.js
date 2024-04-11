@@ -137,7 +137,7 @@ const controller = {
 
   postAppointment: async (req, res) => {
     try {
-      const location = req.body.region;
+      let location = req.body.region;
 
       const jsonData = req.body.json;
       const {
@@ -382,12 +382,44 @@ const controller = {
         }
       }
     }
+  },
+
+  getDataCountReport: async function (req, res) {
+    const status = req.body.status;
+    const location = req.body.region;
+
+    const node =
+      location === "luzon" ? connect.luzon_node : connect.vismin_node;
+
+    const sql = `SELECT COUNT(*) as count FROM clinics c JOIN appt_main a ON a.clinicid = c.clinicid WHERE a.status = ? GROUP BY c.RegionName, c.City, a.status WITH ROLLUP;`;
+
+    //if location is central, get data count for central only
+    if (location == "central") {
+      const master_insertResult = await connect.dbQuery(
+        connect.central_node,
+        sql,
+        [status]
+      );
+
+      if (master_insertResult) {
+        console.log("INSERT: ", master_insertResult[0][0].count);
+
+        // Insert the appointment data into the database
+        const insertResult = await connect.dbQuery(node, sql, [status]);
+
+        if (insertResult) {
+          console.log("INSERT: ", insertResult[0][0].count);
+          res.status(200).json({ rows: insertResult }).send();
+          return;
+        }
+      }
+    }
 
     //TODO: purpose of this function is unclear.
     //do you mean if not central, get data from the chosen subnode only?
 
     // read the data from the chosen subnode
-    const insertResult = await connect.dbQuery(node, sql, []);
+    const insertResult = await connect.dbQuery(node, sql, [status]);
 
     if (insertResult) {
       console.log("INSERT: ", insertResult[0][0].count);
@@ -406,6 +438,7 @@ const controller = {
   editAppointment: async function (req, res) {
     console.log("--- Editing appointment ---");
     let location = req.body.region;
+    let clinicid = req.body.clinicid;
 
     const jsonData = req.body.json;
     const {
