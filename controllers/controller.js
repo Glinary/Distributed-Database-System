@@ -304,6 +304,7 @@ const controller = {
           console.log(err);
           res.status(500).send("Error in postAppointment");
         }
+        //console.log("LOCATION!", loc);
 
         switch (loc[0][0].RegionName) {
           case "National Capital Region (NCR)":
@@ -332,7 +333,7 @@ const controller = {
       // Retrieve the last inserted ID from the appt_main table
       let result1;
       try {
-        result1 = await connect.dbQuery(node, sqlLastId, []);
+        result1 = await connect.dbQuery(connect.central_node, sqlLastId, []);
       } catch (err) {
         console.log(err);
         res.status(500).send("Error in postAppointment");
@@ -446,6 +447,7 @@ const controller = {
 
       if (master_result) {
         res.status(200).json({ rows: master_latestRecords }).send();
+        return;
       }
     }
 
@@ -482,6 +484,7 @@ const controller = {
   
         if (master_result) {
           res.status(200).json({ rows: master_latestRecords }).send();
+          return;
         }
       } catch (err) {
         console.log(err);
