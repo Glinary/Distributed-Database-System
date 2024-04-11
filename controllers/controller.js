@@ -30,6 +30,13 @@ const controller = {
     });
   },
 
+  getReport: async function (req, res) {
+    res.render("report", {
+      maincss: "/static/css/main.css",
+      mainscript: "/static/js/report.js",
+    });
+  },
+
   getAllData: async function (req, res) {
     const category = req.body.data;
     const pageNum = req.body.pageNum;
