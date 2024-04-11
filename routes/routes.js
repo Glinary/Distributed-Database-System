@@ -9,6 +9,7 @@ router.get("/doctors", controller.getDoctors);
 router.post("/editAppointment", controller.editAppointment);
 router.post("/deleteAppointment", controller.deleteAppointment);
 router.post("/alldata", controller.getAllData);
+router.post("/reportstats", controller.getStats);
 router.post("/allNewData", controller.getAllNewData);
 router.post("/dataCount", controller.getDataCount);
 router.post("/dataCountReport", controller.getDataCountReport);

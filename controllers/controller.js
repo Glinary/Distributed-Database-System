@@ -138,6 +138,97 @@ const controller = {
     }
   },
 
+  getStats: async function (req, res) {
+    const status = req.body.status;
+    const pageNum = req.body.pageNum;
+    const location = req.body.region;
+
+    //Search on the chosen node first before querying on central node, then fail if none
+    async function connectionReRoute(node_num) {
+      let connection, node;
+      switch (node_num) {
+        case 2: //user chose luzon region
+          try {
+            connection = connect.luzon_node.getConnection();
+            node = connect.luzon_node;
+          } catch (err) {
+            try {
+              connection = connect.central_node.getConnection();
+              node = connect.central_node;
+            } catch (err) {
+              console.log(err);
+              res.status(500).send("Error retrieving data from database");
+            }
+          }
+          break;
+        case 3: //user chose visayas/mindanao region
+          try {
+            connection = connect.vismin_node.getConnection();
+            node = connect.vismin_node;
+          } catch (err) {
+            try {
+              connection = connect.central_node.getConnection();
+              node = connect.central_node;
+            } catch (err) {
+              console.log(err);
+              res.status(500).send("Error retrieving data from database");
+            }
+          }
+          break;
+        default:
+          try {
+            connection = connect.central_node.getConnection();
+            node = connect.central_node;
+          } catch (err) {
+            console.log(err);
+            res.status(500).send("Error retrieving data from database");
+          }
+      }
+
+      return node;
+    }
+
+    let node;
+    console.log("Getting data...");
+
+    const sqlstats = ` SELECT c.RegionName, c.City, COUNT(1) as "No. of Apointments", a.status
+                        FROM clinics c JOIN appt_main a ON c.clinicid = a.clinicid 
+                        WHERE a.status = ? 
+                        GROUP BY c.RegionName, c.City, a.status WITH ROLLUP
+                        LIMIT 15 OFFSET ${(pageNum - 1) * 15}; `
+
+    let result;
+    switch (location) {
+      case "central":
+        node = await connectionReRoute(1);
+        [result] = await connect.dbQuery(node, sqlstats, [status]);
+        break;
+      case "luzon":
+        node = await connectionReRoute(2);
+        [result] = await connect.dbQuery(node, sqlstats, [status]);
+        console.log("NODEEE IS:", node);
+        break;
+      default:
+        node = await connectionReRoute(3);
+        [result] = await connect.dbQuery(node, sqlstats, [status]);
+        break;
+    }
+
+    if (node === connect.central_node) {
+      console.table(result);
+      res.status(200).json({ rows: result });
+    } else {
+      const [result2] = await connect.dbQuery(
+        node === connect.luzon_node ? connect.luzon_node : connect.vismin_node,
+        sqlstats,
+        []
+      );
+
+      console.table(result2);
+      res.status(200).json({ rows: result2 });
+    }
+  },
+
   postAppointment: async (req, res) => {
     try {
       let location = req.body.region;
