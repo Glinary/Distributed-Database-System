@@ -1,14 +1,16 @@
 <section class="home">
     <div class="head">
-        <select id="opSelect">
-            <option value="Read">Read</option>
-            <option value="Add">Add</option>
-            <option value="Delete">Delete</option>
-            <option value="Update">Update</option>
+
+        <select id="opSelect" name="status">
+            <option value="Complete">Complete</option>
+            <option value="Queued" selected>Queued</option>
+            <option value="NoShow">NoShow</option>
+            <option value="Serving">Serving</option>
+            <option value="Cancel">Cancel</option>
         </select>
 
         <select id="regSelect">
-            <option value="central">All</option>
+            <option value="central" selected>All</option>
             <option value="luzon">Luzon</option>
             <option value="vismin">Visayas/Mindanao</option>
         </select>
