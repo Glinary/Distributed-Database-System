@@ -660,15 +660,13 @@ const controller = {
       apptid,
     ];
 
-    //TODO: get clinicid as well in this function for server "all" to work
-
     //get clinic id to get the region ex:ncr
     //get clinicid to get the region if user chose central ex: ncr
     if (location == "central") {
       const sqlGetLoc = `SELECT RegionName FROM clinics WHERE clinicid = ?`;
       let loc;
       try {
-        const loc = await connect.dbQuery(connect.central_node, sqlGetLoc, [
+        loc = await connect.dbQuery(connect.central_node, sqlGetLoc, [
           clinicid,
         ]);
         //TODO: check if it gets loc successfully with predicted regions list
